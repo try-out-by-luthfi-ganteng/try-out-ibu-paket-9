@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Try Out Substansi BCKS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16283d;
+    --ink-soft:#3c5066;
+    --paper:#f6f3ea;
+    --paper-raised:#ffffff;
+    --line:#dcd5c2;
+    --gold:#a9781f;
+    --gold-soft:#f1e6c9;
+    --good:#3d6b4c;
+    --good-bg:#e6efe6;
+    --bad:#a83e2c;
+    --bad-bg:#f6e6e1;
+    --navy2:#1e3a56;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    line-height:1.55;
+    min-height:100vh;
+  }
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+    padding:20px 18px 60px;
+  }
+  header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:20px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  header.top .title-block h1{
+    font-family:'Source Serif 4', serif;
+    font-weight:700;
+    font-size:28px;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  header.top .title-block p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:13.5px;
+  }
+  .timer-block{
+    text-align:right;
+  }
+  .timer-block .label{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-bottom:2px;
+  }
+  .timer-block .clock{
+    font-variant-numeric:tabular-nums;
+    font-size:30px;
+    font-weight:700;
+    font-family:'Source Serif 4', serif;
+    color:var(--navy2);
+  }
+  .timer-block .clock.warn{ color:var(--bad); }
+
+  .layout{
+    display:grid;
+    grid-template-columns:230px 1fr;
+    gap:26px;
+    align-items:start;
+  }
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;}
+    .layout .panel{order:1;}
+    .layout .map{order:2; position:static; max-height:260px; overflow-y:auto;}
+  }
+
+  /* sidebar map */
+  .map{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:16px 14px;
+    position:sticky;
+    top:20px;
+  }
+  .map h2{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+    font-weight:600;
+  }
+  .map .section-group{ margin-bottom:14px; }
+  .map .section-group:last-child{ margin-bottom:0; }
+  .map .section-name{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:6px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .map .section-name span.count{ color:var(--ink-soft); font-weight:400; }
+  .map .grid{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:4px;
+  }
+  .map button.qnum{
+    aspect-ratio:1;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    font-size:11px;
+    font-family:'IBM Plex Sans', sans-serif;
+    border-radius:2px;
+    cursor:pointer;
+    padding:0;
+  }
+  .map button.qnum:hover{ border-color:var(--navy2); }
+  .map button.qnum.answered{
+    background:var(--navy2);
+    color:#fff;
+    border-color:var(--navy2);
+  }
+  .map button.qnum.current{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+  }
+  .map button.qnum.correct{ background:var(--good); border-color:var(--good); color:#fff; }
+  .map button.qnum.wrong{ background:var(--bad); border-color:var(--bad); color:#fff; }
+
+  .progress-line{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .progress-line strong{ color:var(--ink); }
+
+  /* main panel */
+  .panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:28px 30px 24px;
+    min-height:420px;
+  }
+  .qmeta{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .qmeta .tag{
+    display:inline-block;
+    background:var(--gold-soft);
+    color:var(--gold);
+    font-size:11.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    padding:3px 10px;
+    border-radius:20px;
+  }
+  .qmeta .idx{
+    color:var(--ink-soft);
+    font-size:13px;
+  }
+  .qtext{
+    font-family:'Source Serif 4', serif;
+    font-size:19px;
+    line-height:1.5;
+    margin:0 0 22px;
+    max-width:66ch;
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .option{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    text-align:left;
+    width:100%;
+    padding:13px 16px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:3px;
+    cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14.5px;
+    color:var(--ink);
+    transition:border-color .12s ease, background .12s ease;
+  }
+  .option:hover{ border-color:var(--navy2); }
+  .option .letter{
+    flex:0 0 auto;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    border:1px solid var(--ink-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .option.selected{
+    background:var(--gold-soft);
+    border-color:var(--gold);
+  }
+  .option.selected .letter{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#fff;
+  }
+  .option.correct{
+    background:var(--good-bg);
+    border-color:var(--good);
+  }
+  .option.correct .letter{ background:var(--good); border-color:var(--good); color:#fff; }
+  .option.wrong{
+    background:var(--bad-bg);
+    border-color:var(--bad);
+  }
+  .option.wrong .letter{ background:var(--bad); border-color:var(--bad); color:#fff; }
+  .option:disabled{ cursor:default; }
+
+  .explain{
+    margin-top:18px;
+    padding:14px 16px;
+    background:#fbf8f1;
+    border-left:3px solid var(--gold);
+    font-size:13.5px;
+    color:var(--ink-soft);
+    display:none;
+  }
+  .explain.show{ display:block; }
+  .explain strong{ color:var(--ink); }
+
+  .nav-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:3px;
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    cursor:pointer;
+  }
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+  }
+  .btn:disabled{ opacity:.35; cursor:default; }
+  .btn.gold{ background:var(--gold); border-color:var(--gold); }
+  .btn.danger{ background:var(--bad); border-color:var(--bad); }
+
+  /* intro / results screens */
+  .screen-center{
+    text-align:center;
+    padding:40px 20px;
+  }
+  .screen-center h2{
+    font-family:'Source Serif 4', serif;
+    font-size:24px;
+    margin-bottom:10px;
+  }
+  .screen-center p{
+    color:var(--ink-soft);
+    max-width:52ch;
+    margin:0 auto 22px;
+  }
+  .start-facts{
+    display:flex;
+    gap:26px;
+    justify-content:center;
+    margin:26px 0 30px;
+    flex-wrap:wrap;
+  }
+  .start-facts div{
+    text-align:center;
+  }
+  .start-facts .num{
+    font-family:'Source Serif 4', serif;
+    font-size:26px;
+    font-weight:700;
+    color:var(--navy2);
+  }
+  .start-facts .lab{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  .results-summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:14px;
+    margin:24px 0 30px;
+  }
+  .results-summary .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:16px;
+  }
+  .results-summary .card .sec{
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .results-summary .card .score{
+    font-family:'Source Serif 4', serif;
+    font-size:22px;
+    font-weight:700;
+  }
+  .results-summary .card .bar{
+    height:5px;
+    background:var(--line);
+    border-radius:3px;
+    margin-top:8px;
+    overflow:hidden;
+  }
+  .results-summary .card .bar span{
+    display:block;
+    height:100%;
+    background:var(--navy2);
+  }
+
+  .review-list{
+    text-align:left;
+    margin-top:10px;
+  }
+  .review-item{
+    border-bottom:1px solid var(--line);
+    padding:14px 2px;
+  }
+  .review-item .rq{
+    font-size:14px;
+    margin-bottom:6px;
+  }
+  .review-item .rmeta{
+    font-size:12px;
+    display:flex;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .review-item .rmeta .pill{
+    padding:2px 8px;
+    border-radius:20px;
+    font-weight:600;
+  }
+  .review-item .rmeta .pill.correct{ background:var(--good-bg); color:var(--good); }
+  .review-item .rmeta .pill.wrong{ background:var(--bad-bg); color:var(--bad); }
+  .review-item .rmeta .pill.blank{ background:var(--gold-soft); color:var(--gold); }
+  .review-item .rexp{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="title-block">
+      <h1>Try Out Seleksi Substansi BCKS</h1>
+      <p>Paket 3 &middot; 70 soal baru &middot; jenjang Sekolah Dasar &middot; format sesuai Kepmendikdasmen No. 129/P/2025</p>
+    </div>
+    <div class="timer-block" id="timerBlock">
+      <div class="label">Sisa waktu</div>
+      <div class="clock" id="clock">02:00:00</div>
+    </div>
+  </header>
+
+  <!-- START SCREEN -->
+  <div id="startScreen" class="panel screen-center">
+    <h2>Siap mengerjakan try out?</h2>
+    <p>Latihan ini berisi 70 soal kasus baru (berbeda dari paket sebelumnya) yang mengukur lima dimensi kompetensi kepala sekolah sesuai regulasi seleksi substansi BCKS yang berlaku. Kerjakan tanpa jeda seperti ujian sesungguhnya.</p>
+    <div class="start-facts">
+      <div><div class="num">70</div><div class="lab">Soal kasus</div></div>
+      <div><div class="num">120</div><div class="lab">Menit</div></div>
+      <div><div class="num">5</div><div class="lab">Dimensi kompetensi</div></div>
+    </div>
+    <button class="btn gold" id="startBtn">Mulai Try Out</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quizScreen" class="layout hidden">
+    <aside class="map" id="mapPanel"></aside>
+    <main class="panel">
+      <div class="qmeta">
+        <span class="tag" id="qTag"></span>
+        <span class="idx" id="qIdx"></span>
+      </div>
+      <p class="qtext" id="qText"></p>
+      <div class="options" id="qOptions"></div>
+      <div class="nav-row">
+        <button class="btn secondary" id="prevBtn">&larr; Sebelumnya</button>
+        <button class="btn danger" id="finishBtn">Selesai &amp; Kirim</button>
+        <button class="btn" id="nextBtn">Selanjutnya &rarr;</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="resultScreen" class="panel hidden">
+    <div class="screen-center">
+      <h2 id="resultHeadline">Hasil Try Out</h2>
+      <p id="resultSub"></p>
+    </div>
+    <div class="results-summary" id="resultsSummary"></div>
+    <div>
+      <h2 style="font-size:18px; font-family:'Source Serif 4',serif; border-top:1px solid var(--line); padding-top:20px;">Pembahasan lengkap</h2>
+      <div class="review-list" id="reviewList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ======================= DATA: 70 SOAL BARU (PAKET 3 - JENJANG SD) ======================= */
+const RAW = [
+{s:"Kepribadian", q:"Kepala sekolah menerima informasi rahasia dari seorang guru bahwa rekan gurunya sedang menghadapi masalah rumah tangga berat yang memengaruhi kinerjanya, dengan permintaan eksplisit agar informasi ini tidak disebarluaskan. Beberapa hari kemudian, dalam rapat evaluasi kinerja, nama guru yang bermasalah tersebut dibahas secara kritis oleh rekan-rekannya tanpa mereka tahu latar belakangnya. Sikap paling tepat kepala sekolah adalah...", opts:["Diam sepenuhnya tanpa intervensi apa pun, karena secara formal bukan tanggung jawab kepala sekolah mengelola dinamika forum evaluasi","Menghentikan pembahasan mengenai guru tersebut secara tegas tanpa penjelasan apa pun kepada forum, agar informasi rahasia tetap terjaga","Membuka informasi tersebut kepada forum secara terbatas agar rekan-rekannya memahami konteks dan tidak menghakimi secara tidak adil","Tetap menjaga kerahasiaan informasi tersebut sesuai kepercayaan yang diberikan, namun secara umum mengarahkan forum untuk lebih berempati dan tidak menghakimi tanpa menyebutkan alasan spesifik yang bersifat rahasia"], correct:3, e:"Menjaga kepercayaan yang diberikan adalah bagian dari integritas personal, namun tetap bisa bertindak melindungi tanpa membocorkan rahasia (pilihan D)—membuka rahasia (pilihan C) mengkhianati kepercayaan, sementara diam total (pilihan A) atau menghentikan tanpa penjelasan (pilihan B) tidak menyeimbangkan kerahasiaan dengan tanggung jawab menjaga iklim forum yang adil."},
+{s:"Kepribadian", q:"Kepala sekolah menyadari bahwa ia secara konsisten lebih mudah memaafkan kesalahan kecil dari guru yang secara pribadi ia sukai, dibanding guru lain yang melakukan kesalahan serupa namun kurang dekat secara personal dengannya. Pola ini baru disadari setelah membandingkan catatan tindak lanjutnya sendiri selama setahun terakhir. Langkah paling tepat adalah...", opts:["Membiarkan pola tersebut karena kedekatan personal dengan sebagian guru dianggap sebagai bagian wajar dari dinamika hubungan kerja sehari-hari","Mengurangi interaksi personal dengan seluruh guru secara merata agar tidak ada lagi kedekatan yang bisa memengaruhi objektivitas","Menetapkan kriteria tindak lanjut yang konsisten dan terdokumentasi untuk jenis kesalahan serupa, lalu menerapkannya secara seragam terlepas dari kedekatan personal, sambil meninjau ulang kasus-kasus sebelumnya yang mungkin perlu dikoreksi keadilannya","Meminta wakil kepala sekolah untuk mengambil alih seluruh keputusan tindak lanjut kesalahan guru agar bias personalnya tidak lagi berpengaruh"], correct:2, e:"Kematangan etika menuntut kriteria objektif dan konsisten yang diterapkan tanpa memandang kedekatan personal (pilihan C), bukan menghindari hubungan personal sepenuhnya (pilihan B) yang tidak realistis, membiarkan bias berlanjut (pilihan A), atau melepas tanggung jawab kepemimpinan sepenuhnya (pilihan D)."},
+{s:"Kepribadian", q:"Dalam sebuah kesempatan, kepala sekolah tergoda untuk sedikit membesar-besarkan capaian pribadinya saat presentasi di forum kepala sekolah se-kabupaten, karena menyadari bahwa kepala sekolah lain juga cenderung melakukan hal serupa dan ia tidak ingin sekolahnya terlihat kalah menonjol. Sikap paling tepat adalah...", opts:["Tidak berpartisipasi dalam presentasi tersebut sama sekali untuk menghindari godaan membesar-besarkan capaian","Menyampaikan capaian secara akurat namun sengaja menyembunyikan seluruh tantangan yang masih dihadapi agar tetap terlihat unggul","Menyampaikan capaian sekolah secara akurat apa adanya, termasuk tantangan yang masih dihadapi, karena kredibilitas jangka panjang lebih berharga dibanding kesan menonjol sesaat yang dibangun di atas informasi yang tidak sepenuhnya akurat","Membesar-besarkan capaian secukupnya mengikuti norma yang tampaknya berlaku umum di forum tersebut, karena dianggap sebagai bagian dari strategi presentasi yang wajar"], correct:2, e:"Integritas menuntut konsistensi antara fakta dan penyampaian meski berada dalam tekanan norma sosial yang longgar (pilihan C), bukan mengikuti norma yang keliru (pilihan D), menghindari situasi dilematis (pilihan A), atau kejujuran parsial yang tetap menyesatkan (pilihan B)."},
+{s:"Kepribadian", q:"Kepala sekolah mendapati dirinya merasa sangat bangga dan cenderung mengklaim keberhasilan suatu program sebagai hasil visinya sendiri, padahal program tersebut sebenarnya murni gagasan dan inisiatif seorang guru muda yang kemudian ia dukung dan fasilitasi sumber dayanya. Sikap paling tepat setelah menyadari kecenderungan ini adalah...", opts:["Membiarkan persepsi bahwa program tersebut adalah visinya sendiri, karena sebagai kepala sekolah ia memang bertanggung jawab penuh atas segala capaian di sekolahnya","Menyerahkan seluruh kredit dan pengakuan kepada guru muda tersebut sepenuhnya, sambil tidak lagi menyebut peran dukungannya sendiri sama sekali","Secara sadar mengoreksi cara ia menceritakan asal-usul program tersebut ke depannya, memastikan kredit atas gagasan awal tetap diberikan kepada guru muda tersebut, sambil tetap mengapresiasi peran dukungannya sendiri secara proporsional","Mengklarifikasi asal-usul program tersebut hanya jika ada pihak yang secara spesifik menanyakannya secara langsung"], correct:2, e:"Kejujuran atribusi menuntut koreksi aktif atas kesalahan persepsi yang sudah terbentuk (pilihan C), bukan membiarkannya berlanjut demi citra kepemimpinan (pilihan A), menghapus perannya sendiri secara berlebihan (pilihan B), atau bersikap pasif menunggu ditanya (pilihan D) yang tidak benar-benar mengoreksi kesan yang keliru."},
+{s:"Kepribadian", q:"Kepala sekolah menyadari bahwa setiap kali menghadapi kegagalan suatu program, refleksinya cenderung cepat berpindah ke 'apa yang salah dari sistem/pihak lain' tanpa cukup waktu mempertanyakan peran keputusannya sendiri dalam kegagalan tersebut. Langkah paling tepat memperdalam kualitas refleksinya adalah...", opts:["Secara sengaja menambahkan tahap refleksi yang mengharuskan dirinya mengidentifikasi setidaknya satu kontribusi keputusan atau tindakannya sendiri terhadap kegagalan, sebelum beralih membahas faktor eksternal","Menghentikan kebiasaan refleksi formal atas kegagalan program dan lebih fokus merancang program baru yang lebih baik ke depan","Mempertahankan pola refleksi yang ada karena faktor eksternal memang sering menjadi penyebab dominan kegagalan suatu program di lapangan","Meminta pihak lain (misalnya wakil kepala sekolah) untuk melakukan refleksi objektif atas kegagalan tersebut, sementara dirinya cukup menerima hasilnya"], correct:0, e:"Refleksi yang mendalam dan jujur menuntut kesediaan memeriksa peran diri sendiri terlebih dahulu, bukan berlindung di balik faktor eksternal (pilihan A)—melimpahkan refleksi ke pihak lain (pilihan D), mempertahankan pola bias (pilihan C), atau menghindari refleksi sama sekali (pilihan B) semuanya menghambat pertumbuhan kepemimpinan yang sejati."},
+{s:"Kepribadian", q:"Setelah membaca sebuah buku kepemimpinan yang sangat menginspirasi, kepala sekolah merasa sangat termotivasi menerapkan seluruh konsep dalam buku tersebut secara langsung ke sekolahnya minggu depan, tanpa mempertimbangkan lebih dalam apakah konsep tersebut relevan dengan konteks spesifik sekolahnya. Sikap reflektif paling tepat adalah...", opts:["Meluangkan waktu untuk secara kritis mempertimbangkan konsep mana dari buku tersebut yang benar-benar relevan dengan konteks dan tantangan spesifik sekolahnya, sebelum memutuskan penerapan secara bertahap dan terukur","Segera menerapkan seluruh konsep dalam buku tersebut secara langsung, karena antusiasme dan momentum motivasi tinggi dianggap penting untuk dimanfaatkan segera","Mengabaikan buku tersebut sepenuhnya setelah beberapa hari karena antusiasme awal dianggap hanya emosi sesaat yang akan meredup","Membagikan buku tersebut kepada seluruh guru untuk dibaca dan diterapkan sendiri-sendiri sesuai interpretasi masing-masing tanpa arahan dari kepala sekolah"], correct:0, e:"Refleksi yang matang menyaring inspirasi baru secara kritis dan kontekstual sebelum bertindak (pilihan A), bukan menerapkan secara impulsif tanpa pertimbangan (pilihan B), membiarkan inspirasi hilang begitu saja (pilihan C), atau melimpahkan interpretasi tanpa arahan yang bisa menimbulkan penerapan yang tidak konsisten (pilihan D)."},
+{s:"Kepribadian", q:"Kepala sekolah rutin menuliskan target pengembangan diri setiap awal tahun, namun menyadari bahwa target-target tersebut hampir selalu sama dari tahun ke tahun tanpa evaluasi mendalam mengapa target sebelumnya belum sepenuhnya tercapai. Langkah paling tepat memperbaiki siklus pengembangan diri ini adalah...", opts:["Mempertahankan target yang sama karena dianggap masih relevan dan penting, terlepas dari belum tercapainya target tersebut di tahun-tahun sebelumnya","Melakukan evaluasi mendalam terhadap target tahun sebelumnya terlebih dahulu—mengidentifikasi hambatan konkret yang menyebabkan target belum tercapai—sebelum merumuskan target baru yang mempertimbangkan hambatan tersebut secara spesifik","Menurunkan ambisi target pengembangan diri menjadi lebih sederhana agar lebih mudah tercapai tanpa perlu mengevaluasi penyebab kegagalan sebelumnya","Menetapkan target pengembangan diri yang sepenuhnya baru dan berbeda dari tahun-tahun sebelumnya, agar tidak lagi mengulang target yang sama"], correct:1, e:"Siklus pengembangan diri yang efektif menuntut evaluasi mendalam terhadap hambatan nyata sebelum merumuskan ulang target (pilihan B), bukan sekadar mengganti target (pilihan D), mengulang tanpa evaluasi (pilihan A), atau menurunkan ambisi tanpa memahami akar masalah (pilihan C)."},
+{s:"Kepribadian", q:"Kepala sekolah menerima kritik dari seorang pengawas bahwa gaya kepemimpinannya terlalu 'people pleaser'—terlalu berusaha menyenangkan semua pihak sehingga sulit mengambil keputusan tegas yang mungkin tidak populer. Reaksi awalnya defensif, namun ia mencoba merenungkannya lebih jauh. Langkah reflektif paling tepat selanjutnya adalah...", opts:["Mencari beberapa contoh konkret keputusan masa lalu yang mungkin mencerminkan pola tersebut, mengevaluasi dampaknya secara objektif, dan mengidentifikasi situasi spesifik di mana ia perlu melatih ketegasan lebih, dibanding menerima atau menolak label tersebut secara mentah","Menolak kritik tersebut sepenuhnya karena dianggap sebagai penilaian subjektif pengawas yang tidak sepenuhnya memahami konteks kepemimpinannya","Menerima label 'people pleaser' tersebut secara penuh dan berusaha mengubah gaya kepemimpinannya secara total menjadi jauh lebih tegas dan otoriter","Menerima kritik tersebut tanpa verifikasi lebih lanjut dan langsung meminta maaf kepada seluruh staf atas gaya kepemimpinannya selama ini"], correct:0, e:"Refleksi yang matang memverifikasi kritik dengan bukti konkret sebelum bertindak (pilihan A), bukan menerima secara mentah dan overkorektif (pilihan C), menolak defensif tanpa evaluasi (pilihan B), atau bereaksi berlebihan tanpa verifikasi (pilihan D)."},
+{s:"Kepribadian", q:"Kepala sekolah menghadiri acara perpisahan kelas 6 dan menyadari bahwa dalam sambutannya, ia lebih banyak berbicara tentang pencapaian akademik dan prestasi sekolah dibanding secara personal mengenal dan menyebut kenangan individual tentang siswa-siswa yang akan lulus. Sikap pribadi yang lebih mencerminkan orientasi pada peserta didik untuk acara mendatang adalah...", opts:["Meluangkan waktu sebelum acara untuk mengenal cerita dan momen personal beberapa siswa secara lebih mendalam, agar sambutan dan interaksinya mencerminkan kepedulian personal terhadap perjalanan individual siswa, bukan hanya capaian institusional","Meminta wali kelas menyiapkan sambutan yang lebih personal, sementara kepala sekolah tetap fokus menyampaikan pencapaian institusional","Mempersingkat sambutannya secara keseluruhan agar lebih banyak waktu diberikan kepada siswa untuk tampil, tanpa perlu mengubah isi sambutannya","Mempertahankan fokus sambutan pada pencapaian akademik dan prestasi sekolah, karena dianggap lebih relevan untuk acara resmi kelulusan"], correct:0, e:"Orientasi berpusat pada peserta didik menuntut kepedulian personal yang tulus terhadap perjalanan individual siswa, tidak sekadar capaian institusional (pilihan A)—mempertahankan fokus institusional (pilihan D), melimpahkan sisi personal ke pihak lain (pilihan B), atau sekadar mempersingkat tanpa mengubah substansi (pilihan C) tidak benar-benar menunjukkan kepedulian personal kepala sekolah sendiri."},
+{s:"Kepribadian", q:"Kepala sekolah harus memutuskan bagaimana merespons secara pribadi ketika seorang siswa kelas rendah menangis histeris karena takut dijemput terlambat, sementara kepala sekolah sedang terburu-buru menghadiri rapat penting di luar sekolah yang sudah ditunggu banyak pihak. Sikap yang paling mencerminkan orientasi pada peserta didik adalah...", opts:["Segera berangkat ke rapat sesuai jadwal karena banyak pihak lain yang menunggu, sambil mempercayakan penanganan siswa tersebut sepenuhnya kepada guru piket tanpa memastikan langsung","Menelepon guru piket dari perjalanan menuju rapat untuk menanyakan kondisi siswa tersebut, tanpa menunda keberangkatannya sedikit pun","Meluangkan waktu sejenak untuk menenangkan siswa tersebut secara personal atau memastikan ada orang dewasa terpercaya yang mendampinginya sebelum berangkat, meski berisiko sedikit terlambat menghadiri rapat","Meminta satpam sekolah untuk menenangkan siswa tersebut, karena dianggap sudah cukup mewakili kehadiran otoritas sekolah dalam situasi tersebut"], correct:2, e:"Kepedulian personal terhadap peserta didik yang sedang dalam kondisi rentan menuntut memastikan langsung kondisi aman sebelum meninggalkan situasi (pilihan C), sekecil apa pun penundaan yang harus ditanggung—melepaskan tanggung jawab sepenuhnya tanpa memastikan langsung (pilihan A, B, D) mengorbankan kepedulian nyata demi jadwal pribadi."},
+{s:"Kepribadian", q:"Kepala sekolah menyadari bahwa ia hafal nama dan capaian akademik seluruh siswa berprestasi di sekolahnya, namun ketika ditanya oleh seorang tamu, ia kesulitan mengingat nama-nama siswa dengan kebutuhan khusus yang jumlahnya jauh lebih sedikit di sekolah tersebut. Langkah paling tepat setelah menyadari kesenjangan ini adalah...", opts:["Menerima kesenjangan tersebut sebagai hal wajar mengingat keterbatasan waktu kepala sekolah yang harus mengenal ratusan siswa secara keseluruhan","Fokus mengenal siswa berprestasi karena mereka dianggap lebih merepresentasikan citra sekolah kepada tamu dan pihak eksternal","Secara sengaja meluangkan waktu untuk lebih mengenal secara personal seluruh siswa dengan kebutuhan khusus di sekolahnya—nama, karakter, dan kebutuhan spesifik mereka—sebagai bagian dari komitmen kepedulian yang setara terhadap seluruh peserta didik","Meminta guru pendamping khusus untuk selalu mendampingi kepala sekolah setiap kali berinteraksi dengan siswa berkebutuhan khusus, agar tidak perlu mengenal mereka secara personal"], correct:2, e:"Orientasi berpusat pada peserta didik menuntut kepedulian personal yang setara terhadap SELURUH siswa, termasuk yang berkebutuhan khusus dan jumlahnya sedikit (pilihan C)—bergantung pada pihak lain (pilihan D), menerima kesenjangan sebagai wajar (pilihan A), atau memprioritaskan siswa berprestasi demi citra (pilihan B) semuanya mencerminkan kepedulian yang tidak merata."},
+{s:"Kepribadian", q:"Dalam rapat penentuan siswa yang akan mewakili sekolah untuk beasiswa prestasi terbatas, kepala sekolah menyadari dirinya secara pribadi lebih menyukai satu kandidat karena kepribadiannya yang menyenangkan dan sering berinteraksi dengannya, meski data objektif menunjukkan kandidat lain sebenarnya sedikit lebih layak secara kriteria. Sikap paling tepat adalah...", opts:["Secara sadar mengesampingkan preferensi personalnya dan mendukung keputusan berdasarkan data objektif yang menunjukkan kandidat lain lebih layak, karena hak setiap siswa atas kesempatan yang adil tidak boleh dikalahkan oleh kedekatan personal semata","Mendukung kandidat yang ia sukai secara personal karena karakter yang menyenangkan juga merupakan kualitas penting yang layak dipertimbangkan dalam keputusan beasiswa","Menyerahkan keputusan akhir sepenuhnya kepada tim seleksi tanpa menyampaikan pendapat apa pun, untuk menghindari pengaruh preferensi personalnya","Mengusulkan agar kedua kandidat sama-sama diberikan kesempatan dengan cara membagi nilai beasiswa yang terbatas tersebut menjadi dua bagian"], correct:0, e:"Orientasi berpusat pada peserta didik menuntut keadilan berbasis data objektif bagi hak seluruh siswa, mengesampingkan preferensi personal (pilihan A)—mendukung kandidat favorit (pilihan B) mengorbankan keadilan, sementara diam pasif (pilihan C) menghindari tanggung jawab turut menjaga keadilan, dan membagi rata (pilihan D) mengabaikan kriteria objektif yang sudah ada."},
+{s:"Kepribadian", q:"Kepala sekolah menemukan bahwa seorang siswa secara konsisten selalu menjadi yang terakhir dijemput setiap hari, terkadang hingga 30-45 menit setelah sekolah usai, namun tidak ada yang secara resmi melaporkan hal ini sebagai masalah. Sikap pribadi yang paling mencerminkan kepedulian terhadap peserta didik adalah...", opts:["Menetapkan aturan denda bagi orang tua yang terlambat menjemput anaknya sebagai solusi sistemik tanpa terlebih dahulu memahami situasi personal keluarga tersebut","Secara personal memastikan ada pendampingan yang hangat bagi siswa tersebut selama menunggu, sekaligus berinisiatif menghubungi orang tua secara langsung dan berempati untuk memahami situasi mereka, tanpa menunggu adanya laporan resmi terlebih dahulu","Menegur orang tua siswa tersebut secara tegas karena keterlambatan penjemputan yang berulang dianggap tidak bertanggung jawab","Menunggu laporan resmi dari guru piket terlebih dahulu sebelum mengambil tindakan apa pun, karena secara prosedur hal ini bukan ranah langsung kepala sekolah"], correct:1, e:"Kepedulian personal terhadap peserta didik menuntut inisiatif proaktif memahami dan mendampingi situasi siswa tanpa menunggu laporan resmi (pilihan B)—menunggu prosedur (pilihan D), menegur tanpa pemahaman (pilihan C), atau solusi punitif tanpa empati (pilihan A) semuanya gagal menunjukkan kepedulian personal yang tulus terhadap kondisi siswa."},
+{s:"Sosial", q:"Kepala sekolah menyadari bahwa satpam dan petugas kebersihan sekolah, meski berinteraksi setiap hari dengan siswa dan sering mengetahui dinamika sosial di lingkungan sekolah (termasuk potensi perundungan di area yang jarang diawasi guru), tidak pernah dilibatkan dalam forum apa pun yang membahas kesejahteraan siswa. Langkah paling tepat adalah...", opts:["Membangun mekanisme sederhana bagi satpam dan petugas kebersihan untuk turut menyampaikan observasi mereka terkait kondisi siswa (misalnya laporan singkat berkala kepada guru BK), mengakui bahwa mereka adalah bagian penting dari warga sekolah yang memiliki perspektif berharga","Mempertahankan struktur yang ada karena tenaga kependidikan non-akademik dianggap tidak memiliki kompetensi yang relevan untuk isu kesejahteraan siswa","Meminta guru BK untuk secara rutin mewawancarai satpam dan petugas kebersihan secara informal tanpa membangun mekanisme pelaporan yang terstruktur","Menambahkan tugas pengawasan formal kepada satpam dan petugas kebersihan untuk secara aktif mencari kasus perundungan tanpa pelatihan tambahan apa pun"], correct:0, e:"Pemberdayaan warga satuan pendidikan mengakui bahwa setiap anggota komunitas sekolah, termasuk tenaga non-akademik, memiliki kontribusi berharga bagi kesejahteraan siswa (pilihan A)—mengabaikan potensi mereka (pilihan B), pendekatan informal tanpa struktur (pilihan C), atau membebankan tugas tanpa pembekalan (pilihan D) tidak benar-benar memberdayakan mereka secara bermakna."},
+{s:"Sosial", q:"Kepala sekolah menemukan bahwa OSIS (organisasi siswa) di sekolahnya selama ini hanya menjadi eksekutor kegiatan yang sudah dirancang penuh oleh guru pembina, tanpa ruang nyata bagi siswa untuk mengusulkan dan merancang program mereka sendiri. Langkah paling tepat memberdayakan siswa sebagai warga satuan pendidikan adalah...", opts:["Mengganti kepengurusan OSIS dengan siswa yang dianggap lebih kompeten merancang program secara mandiri","Merancang ulang peran guru pembina menjadi fasilitator yang mendampingi proses perancangan program oleh siswa sendiri, memberi ruang nyata bagi OSIS untuk berinisiatif dan belajar dari proses merancang, bukan sekadar melaksanakan program yang sudah jadi","Mempertahankan struktur yang ada karena siswa dianggap belum memiliki kapasitas yang cukup untuk merancang program secara mandiri","Memberikan kebebasan penuh kepada OSIS untuk merancang dan melaksanakan program tanpa pendampingan guru pembina sama sekali"], correct:1, e:"Pemberdayaan siswa sebagai warga satuan pendidikan menuntut ruang nyata untuk berinisiatif dengan pendampingan yang membangun kapasitas (pilihan B), bukan mempertahankan ketergantungan penuh (pilihan C), melepas tanpa bimbingan yang berisiko kegagalan (pilihan D), atau mengganti orang tanpa memperbaiki struktur peran (pilihan A)."},
+{s:"Sosial", q:"Kepala sekolah mendapati bahwa dalam proses penyusunan program kerja tahunan sekolah, kontribusi guru mata pelajaran hanya diminta di akhir proses (sekadar menyetujui rancangan yang sudah jadi), padahal mereka yang paling memahami tantangan implementasi program di kelas. Langkah paling tepat adalah...", opts:["Melibatkan hanya sebagian kecil guru senior sejak awal, sementara guru lain tetap dilibatkan hanya di tahap akhir persetujuan","Menyusun program kerja sepenuhnya berdasarkan arahan dinas pendidikan tanpa perlu melibatkan masukan internal guru sama sekali","Mempertahankan proses yang ada karena keterlibatan guru sejak awal dianggap akan memperlambat proses penyusunan program kerja secara signifikan","Melibatkan guru sejak tahap awal perencanaan program kerja tahunan, khususnya untuk memberikan masukan mengenai kelayakan implementasi di kelas, agar program yang dihasilkan lebih realistis dan guru merasa memiliki program tersebut"], correct:3, e:"Pemberdayaan warga satuan pendidikan yang bermakna melibatkan guru sejak tahap perencanaan awal, bukan sekadar validasi akhir (pilihan D)—mempertahankan proses tertutup demi kecepatan (pilihan C), pelibatan parsial yang tidak merata (pilihan A), atau mengabaikan masukan internal sepenuhnya (pilihan B) tidak benar-benar memberdayakan seluruh warga sekolah."},
+{s:"Sosial", q:"Kepala sekolah menyadari bahwa staf tata usaha sekolah memiliki keahlian teknologi yang sebenarnya bisa sangat membantu proses digitalisasi administrasi sekolah, namun selama ini hanya diberi tugas-tugas administratif rutin tanpa kesempatan mengembangkan atau menerapkan keahlian tersebut secara lebih luas. Langkah paling tepat adalah...", opts:["Meminta staf tersebut membantu digitalisasi hanya di luar jam kerja resmi sebagai bentuk kontribusi sukarela tambahan","Mempertahankan pembagian tugas yang ada karena mengubah tanggung jawab staf tata usaha dianggap berisiko mengganggu kelancaran tugas administratif rutin","Memberi kesempatan dan kepercayaan kepada staf tersebut untuk memimpin inisiatif digitalisasi administrasi sekolah, mengakui dan memanfaatkan keahliannya secara bermakna bagi kemajuan sekolah","Merekrut konsultan eksternal untuk memimpin digitalisasi administrasi, sementara staf tersebut tetap pada tugas rutinnya seperti biasa"], correct:2, e:"Pemberdayaan warga satuan pendidikan mengenali dan memanfaatkan potensi tersembunyi setiap anggota komunitas sekolah secara bermakna (pilihan C)—mempertahankan status quo (pilihan B), mengabaikan potensi internal dengan merekrut eksternal (pilihan D), atau memanfaatkan keahlian tanpa penghargaan yang layak (pilihan A) tidak benar-benar memberdayakan staf tersebut."},
+{s:"Sosial", q:"Kepala sekolah menerima tawaran kolaborasi dari sebuah lembaga penelitian pendidikan untuk menjadi salah satu lokasi studi jangka panjang tentang efektivitas metode pembelajaran, namun kolaborasi ini membutuhkan komitmen data dan waktu guru yang cukup besar selama beberapa tahun ke depan, dengan manfaat konkret yang baru akan terlihat di masa mendatang. Langkah paling tepat adalah...", opts:["Menerima tawaran tersebut secara langsung karena kolaborasi dengan lembaga penelitian dianggap selalu bermanfaat bagi reputasi dan kualitas sekolah","Menolak tawaran tersebut karena manfaat konkretnya belum terlihat langsung dan komitmen jangka panjang dianggap terlalu berisiko","Menerima tawaran tersebut namun tanpa melibatkan guru dalam keputusan awal, karena dianggap sebagai keputusan strategis yang menjadi otoritas penuh kepala sekolah","Mengevaluasi secara cermat keseimbangan antara komitmen sumber daya yang dibutuhkan dan potensi manfaat jangka panjang bagi kualitas pendidikan, melibatkan masukan guru yang akan terlibat langsung sebelum memutuskan berkomitmen pada kolaborasi jangka panjang tersebut"], correct:3, e:"Kolaborasi jangka panjang yang bermakna membutuhkan evaluasi cermat dan pelibatan pihak yang akan terdampak langsung sebelum berkomitmen (pilihan D), bukan menerima tanpa evaluasi (pilihan A), menolak karena manfaat tidak instan (pilihan B), atau keputusan sepihak tanpa melibatkan guru terdampak (pilihan C)."},
+{s:"Sosial", q:"Kepala sekolah menemukan bahwa kolaborasi dengan sebuah yayasan filantropi pendidikan yang selama dua tahun terakhir memberikan bantuan signifikan kepada sekolahnya, kini mulai menuntut laporan dan indikator keberhasilan yang menurutnya kurang relevan dengan konteks nyata sekolah, namun menolak permintaan tersebut berisiko mengakhiri bantuan yang bermanfaat. Langkah paling tepat adalah...", opts:["Memenuhi seluruh permintaan laporan dan indikator tersebut apa adanya untuk menjaga keberlangsungan bantuan yang bermanfaat bagi sekolah","Membuat laporan yang disesuaikan agar terlihat memenuhi indikator yang diminta, meski tidak sepenuhnya mencerminkan kondisi nyata di sekolah","Berkomunikasi secara terbuka dan konstruktif dengan yayasan tersebut mengenai kekhawatiran atas relevansi indikator yang diminta, mengusulkan penyesuaian yang tetap mengakomodasi kebutuhan akuntabilitas yayasan namun lebih sesuai konteks nyata sekolah","Menolak permintaan tersebut secara tegas dan bersiap mengakhiri kolaborasi jika yayasan tidak bersedia mengubah persyaratannya"], correct:2, e:"Kolaborasi yang sehat dan berkelanjutan dibangun melalui komunikasi terbuka yang mencari solusi bersama (pilihan C), bukan kepatuhan tanpa syarat yang mengorbankan relevansi (pilihan A), konfrontasi yang mengorbankan manfaat kolaborasi (pilihan D), atau manipulasi laporan yang melanggar integritas (pilihan B)."},
+{s:"Sosial", q:"Kepala sekolah menyadari bahwa kolaborasi dengan sesama kepala sekolah di gugus yang sama selama ini lebih banyak berupa formalitas administratif (menandatangani dokumen bersama), tanpa benar-benar berbagi tantangan nyata dan solusi konkret yang dihadapi masing-masing sekolah. Langkah paling tepat memperdalam kolaborasi ini adalah...", opts:["Mengurangi partisipasi dalam forum gugus tersebut karena dianggap tidak memberikan nilai substantif bagi peningkatan kualitas sekolahnya","Mempertahankan format kolaborasi yang ada karena aspek administratif formal tersebut memang menjadi kewajiban utama forum gugus sekolah","Membangun kolaborasi informal terpisah hanya dengan sekolah-sekolah tertentu yang dianggap lebih sevisi, di luar forum gugus resmi","Mengusulkan format pertemuan gugus yang lebih substantif, misalnya sesi berbagi kasus nyata dan pemecahan masalah bersama, dibanding sekadar memenuhi kewajiban administratif formal semata"], correct:3, e:"Kolaborasi yang bermakna untuk peningkatan kualitas pendidikan melampaui formalitas administratif menuju berbagi solusi nyata (pilihan D)—mempertahankan formalitas (pilihan B), membangun kolaborasi eksklusif yang memecah forum resmi (pilihan C), atau menarik diri dari forum yang ada (pilihan A) semuanya gagal memperkuat kolaborasi kolektif yang lebih luas."},
+{s:"Sosial", q:"Kepala sekolah mendapati bahwa kolaborasi dengan puskesmas setempat untuk program kesehatan sekolah selama ini berjalan satu arah—puskesmas menentukan seluruh jadwal dan materi program tanpa mempertimbangkan masukan sekolah mengenai kebutuhan kesehatan spesifik yang teramati di lapangan (misalnya pola gizi buruk musiman). Langkah paling tepat adalah...", opts:["Menerima program yang ditentukan puskesmas apa adanya, karena mereka dianggap sebagai pihak yang lebih berwenang dan kompeten dalam urusan kesehatan","Menginisiasi dialog dengan puskesmas untuk membangun kolaborasi yang lebih dua arah, menyampaikan data dan observasi kebutuhan kesehatan spesifik siswa dari sisi sekolah agar program yang dirancang bersama lebih responsif terhadap kebutuhan nyata","Menghentikan kolaborasi dengan puskesmas tersebut karena dianggap tidak cukup responsif terhadap masukan dari sekolah","Menjalankan program kesehatan versi sekolah sendiri secara terpisah dari program puskesmas, tanpa berkoordinasi lebih lanjut mengenai kebutuhan spesifik yang ditemukan"], correct:1, e:"Kolaborasi yang sehat dan saling menguntungkan bersifat dua arah dengan saling berbagi data dan perspektif (pilihan B), bukan kepatuhan pasif sepenuhnya (pilihan A), program paralel yang tidak terkoordinasi (pilihan D), atau mengakhiri kolaborasi yang bermanfaat karena satu kekurangan (pilihan C)."},
+{s:"Sosial", q:"Kepala sekolah menerima undangan menjadi pembicara di webinar nasional yang diselenggarakan asosiasi kepala sekolah untuk berbagi praktik baik program literasinya, namun ia merasa ragu karena programnya belum sempurna dan masih menghadapi beberapa tantangan yang belum terselesaikan. Langkah paling tepat adalah...", opts:["Menerima undangan tersebut namun hanya menyampaikan bagian keberhasilan program, menyembunyikan tantangan yang belum terselesaikan","Meminta salah satu guru yang mengelola program tersebut untuk menggantikannya menjadi pembicara di webinar tersebut","Menolak undangan tersebut sampai programnya benar-benar sempurna tanpa tantangan apa pun yang tersisa untuk dibagikan","Menerima undangan tersebut dengan menyampaikan secara jujur baik keberhasilan maupun tantangan yang masih dihadapi, karena berbagi pembelajaran yang autentik—termasuk kegagalan dan proses perbaikan—sama bernilainya bagi jejaring profesi dibanding hanya cerita sukses yang sempurna"], correct:3, e:"Keterlibatan bermakna dalam jejaring profesi menghargai pembelajaran autentik termasuk tantangan dan proses perbaikan, bukan hanya kisah sukses sempurna (pilihan D)—menolak karena belum sempurna (pilihan C) kehilangan kesempatan berbagi, menyembunyikan tantangan (pilihan A) kurang autentik, dan menghindar dari kesempatan personal (pilihan B) tidak mengembangkan jejaring profesionalnya sendiri."},
+{s:"Sosial", q:"Kepala sekolah menemukan bahwa dalam grup komunikasi daring asosiasi kepala sekolah tingkat provinsi, sering muncul diskusi mengenai kebijakan pendidikan terbaru yang berpotensi kontroversial, dan ia harus memutuskan seberapa aktif ia akan terlibat dalam diskusi tersebut. Sikap paling tepat adalah...", opts:["Berpartisipasi aktif dengan menyampaikan pandangan berbasis data dan pengalaman konkret dari sekolahnya secara konstruktif, karena kontribusi substantif memperkaya diskusi kolektif jejaring profesi, sambil tetap menjaga etika komunikasi profesional dalam forum tersebut","Meninggalkan grup komunikasi tersebut untuk menghindari keterlibatan dalam diskusi yang berpotensi menimbulkan perdebatan","Sepenuhnya menghindari partisipasi dalam diskusi kontroversial apa pun di grup tersebut demi menjaga posisi netral dan menghindari risiko konflik","Berpartisipasi aktif namun hanya menyampaikan pendapat yang sejalan dengan pandangan mayoritas anggota grup, terlepas dari pandangan pribadinya"], correct:0, e:"Keterlibatan bermakna dalam jejaring profesi berkontribusi secara konstruktif dan berbasis bukti pada diskusi kolektif (pilihan A), bukan menghindar sepenuhnya (pilihan C) yang kehilangan nilai kontribusi, mengikuti mayoritas tanpa keaslian pandangan (pilihan D), atau menarik diri dari jejaring (pilihan B) yang mengurangi manfaat keterlibatan profesional."},
+{s:"Sosial", q:"Kepala sekolah menyadari bahwa selama ini ia hanya menjadi anggota pasif di berbagai forum dan pelatihan asosiasi profesi—selalu hadir namun jarang mengambil peran aktif seperti menjadi panitia, narasumber, atau mentor bagi kepala sekolah baru. Langkah paling tepat mengembangkan keterlibatannya dalam jejaring profesi ini adalah...", opts:["Mengurangi partisipasi dalam forum dan pelatihan tersebut karena dianggap sudah cukup berpengalaman dan tidak lagi membutuhkan banyak masukan baru","Menunggu secara pasif sampai ada pihak yang secara khusus menawarkan peran aktif kepadanya dalam forum tersebut","Mempertahankan peran sebagai anggota pasif karena dianggap sudah cukup memberikan kontribusi melalui kehadiran rutin di setiap forum dan pelatihan","Secara bertahap mulai menawarkan diri untuk peran yang lebih aktif sesuai keahlian dan pengalaman yang dimilikinya, misalnya menjadi mentor bagi kepala sekolah baru, sebagai bentuk kontribusi timbal balik terhadap jejaring profesi yang selama ini bermanfaat baginya"], correct:3, e:"Keterlibatan yang matang dalam jejaring profesi berkembang dari sekadar menerima manfaat menuju memberikan kontribusi timbal balik secara aktif (pilihan D)—mempertahankan pasivitas (pilihan C), menarik diri karena merasa sudah cukup berpengalaman (pilihan A), atau menunggu tawaran tanpa inisiatif (pilihan B) semuanya membatasi potensi kontribusi dan pertumbuhan dalam jejaring profesi."},
+{s:"Profesional", q:"Kepala sekolah menyadari bahwa budaya belajar di sekolahnya secara tidak sengaja menghargai kecepatan penyelesaian tugas lebih tinggi dibanding kedalaman pemahaman, karena siswa yang selesai lebih dulu selalu mendapat pujian publik, sementara yang membutuhkan waktu lebih lama untuk memahami secara mendalam jarang mendapat pengakuan setara. Langkah paling tepat adalah...", opts:["Mempertahankan pola apresiasi yang ada karena kecepatan penyelesaian tugas tetap menjadi indikator penting kesiapan menghadapi ujian dengan batas waktu","Hanya memberikan pujian publik kepada siswa yang membutuhkan waktu lebih lama, sebagai bentuk kompensasi atas ketidakadilan yang sudah terjadi","Mengubah cara memberikan apresiasi di kelas agar juga menghargai kedalaman berpikir dan proses eksplorasi, bukan hanya kecepatan penyelesaian, disertai komunikasi kepada guru mengenai pentingnya menyeimbangkan kedua nilai tersebut","Menghentikan seluruh pemberian pujian publik di kelas untuk menghindari perbandingan antar siswa yang berpotensi tidak adil"], correct:2, e:"Budaya belajar yang sehat menyeimbangkan apresiasi kecepatan dan kedalaman berpikir (pilihan C), bukan mempertahankan bias kecepatan (pilihan A), menghapus apresiasi sama sekali (pilihan D), atau membalik bias ke arah berlawanan (pilihan B) yang sama tidak seimbangnya."},
+{s:"Profesional", q:"Kepala sekolah ingin membangun budaya belajar yang menghargai keberanian mengambil risiko intelektual (mencoba ide/jawaban yang belum pasti benar), namun menyadari bahwa sistem penilaian ulangan harian yang berlaku memberikan pengurangan nilai signifikan untuk setiap jawaban salah, sehingga siswa cenderung memilih jawaban aman yang sudah pasti benar. Langkah paling tepat adalah...", opts:["Mempertahankan sistem penilaian yang ada karena dianggap penting untuk mengukur akurasi pemahaman siswa secara objektif dan terstandar","Menghapus sistem pengurangan nilai untuk jawaban salah secara keseluruhan, termasuk pada penilaian sumatif resmi, demi konsistensi penuh dengan visi keberanian mengambil risiko","Membiarkan guru menentukan sendiri kebijakan pengurangan nilai tersebut tanpa arahan strategis dari kepala sekolah mengenai keseimbangan antara akurasi dan keberanian berpikir","Mendorong dan mendampingi guru merancang format latihan formatif terpisah dari penilaian sumatif, di mana kesalahan dalam proses eksplorasi tidak dikenai pengurangan nilai, sehingga keberanian berpikir tetap didorong tanpa mengubah sistem penilaian sumatif yang sudah ditetapkan"], correct:3, e:"Membangun budaya keberanian berpikir bisa diselaraskan dengan sistem penilaian formal melalui pembedaan ruang formatif dan sumatif (pilihan D), bukan mengubah sistem penilaian resmi secara total (pilihan B), mempertahankan status quo yang kontradiktif dengan visi (pilihan A), atau melepas arahan strategis kepada guru tanpa kerangka jelas (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa upaya membangun budaya belajar mandiri (self-directed learning) terhambat karena siswa terbiasa sepenuhnya bergantung pada arahan detail guru untuk setiap langkah tugas, sehingga saat diberi kebebasan memilih topik atau metode belajar, banyak siswa justru merasa bingung dan tidak nyaman. Langkah paling tepat adalah...", opts:["Memberikan kebebasan penuh secara langsung kepada siswa untuk memilih topik dan metode belajar apa pun, agar mereka segera terbiasa dengan tanggung jawab kemandirian belajar","Membangun kemandirian belajar secara bertahap melalui pemberian pilihan terbatas terlebih dahulu (misalnya memilih dari beberapa opsi topik), secara perlahan memperluas ruang kebebasan seiring siswa terbiasa mengambil keputusan belajar sendiri, dibanding memberikan kebebasan penuh secara mendadak","Menugaskan siswa yang sudah lebih mandiri untuk membimbing siswa lain agar terbiasa dengan kemandirian belajar, tanpa keterlibatan langsung guru","Mempertahankan arahan detail dari guru untuk setiap langkah tugas, karena siswa dianggap belum siap untuk kemandirian belajar dalam waktu dekat"], correct:1, e:"Membangun budaya kemandirian belajar yang berkelanjutan membutuhkan pendekatan bertahap yang membangun kepercayaan diri siswa (pilihan B), bukan lompatan mendadak yang berisiko kebingungan (pilihan A), mempertahankan ketergantungan (pilihan D), atau melimpahkan tanggung jawab pembinaan kemandirian kepada sesama siswa tanpa bimbingan guru (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah menyadari bahwa dalam upaya menumbuhkan budaya apresiasi terhadap keberagaman minat dan bakat siswa, sekolah masih sangat dominan merayakan prestasi akademik dan olahraga, sementara bakat di bidang seni, teknologi, atau kewirausahaan siswa jarang mendapat panggung yang setara. Langkah paling tepat adalah...", opts:["Mempertahankan fokus perayaan pada prestasi akademik dan olahraga karena dianggap lebih mudah diukur dan dibandingkan secara objektif","Membiarkan minat dan bakat di luar akademik dan olahraga berkembang secara alami tanpa perlu platform apresiasi formal dari sekolah","Mengurangi perayaan prestasi akademik dan olahraga yang ada saat ini untuk memberi ruang lebih banyak bagi bidang lain","Merancang platform dan kesempatan apresiasi yang lebih beragam (misalnya pameran karya, showcase teknologi, presentasi ide bisnis siswa) yang setara nilainya dengan perayaan prestasi akademik dan olahraga yang sudah ada"], correct:3, e:"Budaya yang menghargai keberagaman bakat membangun platform apresiasi setara bagi semua bidang (pilihan D), bukan mempertahankan dominasi bidang tertentu (pilihan A), mengurangi apresiasi yang sudah baik demi keseimbangan yang keliru (pilihan C), atau membiarkan tanpa dukungan formal (pilihan B) yang tidak benar-benar membangun budaya apresiasi setara."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa visi sekolah tentang pembelajaran yang menyenangkan kadang disalahartikan sebagian guru sebagai pembelajaran yang harus selalu ringan dan menghibur, sehingga beberapa materi yang secara alami menantang mulai dihindari atau disederhanakan berlebihan demi menjaga suasana menyenangkan. Langkah paling tepat mengklarifikasi visi budaya belajar ini adalah...", opts:["Mengklarifikasi kepada seluruh guru bahwa 'menyenangkan' dalam visi sekolah berarti keterlibatan bermakna dan rasa pencapaian dari mengatasi tantangan, bukan sekadar menghindari kesulitan, disertai contoh konkret bagaimana materi menantang bisa tetap disampaikan secara menarik","Mengubah kalimat visi sekolah agar tidak lagi menggunakan kata 'menyenangkan' untuk menghindari kesalahpahaman lebih lanjut dari para guru","Membiarkan interpretasi guru yang ada karena pembelajaran yang ringan dan menghibur dianggap tetap sejalan dengan semangat dasar visi tersebut","Menetapkan daftar materi yang wajib tetap disampaikan secara penuh tanpa penyederhanaan, tanpa menjelaskan alasan filosofis di baliknya kepada guru"], correct:0, e:"Visi yang jelas membutuhkan klarifikasi makna yang mendalam disertai contoh konkret penerapannya (pilihan A), bukan mengubah kalimat visi karena kesalahpahaman implementasi (pilihan B), membiarkan interpretasi yang keliru (pilihan C), atau menetapkan aturan teknis tanpa membangun pemahaman filosofis (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa program penghargaan 'siswa teladan' bulanan yang dirancang untuk membangun budaya karakter positif, dalam praktiknya justru menciptakan persaingan tidak sehat antar siswa yang saling menjatuhkan demi terpilih, bertentangan dengan nilai karakter yang ingin ditanamkan. Langkah paling tepat adalah...", opts:["Menghapus seluruh program penghargaan karakter tersebut karena dampak negatifnya dianggap lebih besar dari manfaatnya","Merancang ulang mekanisme penghargaan agar berbasis kontribusi kolektif dan pertumbuhan personal masing-masing siswa dibanding sekadar satu pemenang tunggal per bulan yang memicu persaingan destruktif antar siswa","Memperketat kriteria penilaian penghargaan tersebut agar lebih objektif, tanpa mengubah format satu pemenang tunggal per bulan yang memicu persaingan","Mempertahankan format penghargaan yang ada karena persaingan dianggap sebagai motivator alami yang wajar terjadi dalam program penghargaan apa pun"], correct:1, e:"Budaya karakter yang sehat dibangun melalui mekanisme yang mendorong kolektivitas dan pertumbuhan personal, bukan kompetisi tunggal yang kontradiktif dengan nilai yang diajarkan (pilihan B)—mempertahankan format bermasalah (pilihan D), menghapus program tanpa perbaikan (pilihan A), atau memperketat kriteria tanpa mengubah struktur dasar yang bermasalah (pilihan C) tidak menyelesaikan akar kontradiksi."},
+{s:"Profesional", q:"Kepala sekolah menyadari bahwa dalam upaya membangun budaya belajar berbasis data, guru-guru mulai terlalu fokus pada angka-angka asesmen sehingga aspek kualitatif penting seperti motivasi, rasa percaya diri, dan kecintaan belajar siswa mulai terabaikan dalam evaluasi pembelajaran sehari-hari. Langkah paling tepat menyeimbangkan hal ini adalah...", opts:["Mempertahankan fokus pada data kuantitatif karena dianggap lebih objektif dan mudah dipertanggungjawabkan dibanding penilaian kualitatif yang subjektif","Memperluas kerangka evaluasi pembelajaran yang digunakan guru agar mencakup indikator kualitatif (observasi motivasi, keterlibatan, kepercayaan diri) selain data kuantitatif asesmen, sehingga budaya berbasis data tetap holistik dan tidak mereduksi pembelajaran hanya menjadi angka","Mengurangi penekanan pada budaya berbasis data secara keseluruhan agar guru kembali lebih fokus pada aspek kualitatif pembelajaran siswa","Menyerahkan sepenuhnya keseimbangan antara aspek kuantitatif dan kualitatif kepada masing-masing guru tanpa kerangka evaluasi yang terstruktur dari kepala sekolah"], correct:1, e:"Budaya berbasis data yang matang mengintegrasikan dimensi kualitatif dan kuantitatif secara seimbang (pilihan B), bukan mengorbankan salah satu (pilihan C dan A), atau melepas kerangka terstruktur yang berisiko inkonsistensi antar guru (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa meski sekolah memiliki visi kuat tentang keberlanjutan lingkungan, praktik sehari-hari di sekolah (penggunaan plastik sekali pakai di kantin, pemborosan listrik, sampah tidak terpilah) masih jauh dari mencerminkan nilai tersebut. Langkah paling tepat menyelaraskan visi dengan budaya nyata sekolah adalah...", opts:["Mempertahankan visi keberlanjutan sebagai aspirasi jangka panjang tanpa perlu mengubah praktik operasional dalam waktu dekat","Menugaskan tim kecil khusus untuk mengurus isu keberlanjutan lingkungan, sementara mayoritas warga sekolah tidak perlu mengubah kebiasaan sehari-hari mereka","Merancang perubahan sistemik bertahap pada praktik operasional sehari-hari sekolah (kebijakan kantin, sistem pengelolaan sampah, efisiensi energi) yang secara konkret mencerminkan visi keberlanjutan, melibatkan seluruh warga sekolah dalam prosesnya, bukan sekadar menjadikannya slogan","Mengadakan sosialisasi dan kampanye kesadaran lingkungan secara rutin tanpa mengubah sistem operasional konkret yang menjadi akar masalah praktik tidak berkelanjutan"], correct:2, e:"Visi yang hidup tercermin dalam perubahan sistemik pada praktik operasional nyata yang melibatkan seluruh warga sekolah (pilihan C), bukan sekadar kampanye kesadaran tanpa perubahan sistem (pilihan D), visi tanpa aksi konkret (pilihan A), atau delegasi terbatas yang tidak membangun budaya kolektif (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa budaya belajar kolaboratif yang ingin ia bangun antar siswa justru terhambat oleh tata letak fisik kelas yang masih sepenuhnya berbentuk baris-berbaris menghadap papan tulis, membuat interaksi kolaboratif antar siswa menjadi sulit dilakukan secara alami. Langkah paling tepat adalah...", opts:["Mempertahankan tata letak kelas yang ada karena perubahan fisik dianggap kurang penting dibanding perubahan pada metode mengajar guru itu sendiri","Mengubah seluruh tata letak kelas di sekolah secara serentak dan seragam tanpa mempertimbangkan kebutuhan spesifik masing-masing mata pelajaran","Mengevaluasi dan menyesuaikan tata letak fisik kelas secara bertahap (misalnya formasi kelompok kecil) agar lingkungan fisik mendukung budaya kolaboratif yang ingin dibangun, dengan melibatkan guru dalam merancang tata letak yang sesuai kebutuhan pembelajaran mereka","Menyerahkan keputusan tata letak kelas sepenuhnya kepada masing-masing guru tanpa visi atau arahan bersama dari kepala sekolah"], correct:2, e:"Lingkungan fisik yang mendukung budaya belajar yang diinginkan perlu disesuaikan secara sengaja dan bertahap (pilihan C)—mengabaikan pengaruh lingkungan fisik (pilihan A), perubahan seragam tanpa mempertimbangkan kebutuhan spesifik (pilihan B), atau tanpa arahan bersama yang berisiko inkonsistensi (pilihan D) semuanya kurang optimal."},
+{s:"Profesional", q:"Kepala sekolah menyadari bahwa upaya membangun budaya belajar berbasis riset kecil (siswa merancang pertanyaan dan mencari jawabannya sendiri) mendapat resistensi dari sebagian orang tua yang menganggap metode ini 'membuang waktu' dibanding metode drilling soal yang lebih terasa 'mengejar nilai'. Langkah paling tepat adalah...", opts:["Melanjutkan metode tersebut tanpa perlu berkomunikasi lebih lanjut dengan orang tua, karena keputusan metodologi pembelajaran adalah otoritas sekolah","Menerapkan metode tersebut secara diam-diam tanpa memberi tahu orang tua, agar tidak menimbulkan kekhawatiran atau penolakan lebih lanjut","Membangun komunikasi yang jelas kepada orang tua mengenai bagaimana keterampilan riset dan berpikir mandiri yang dibangun melalui metode ini justru mendukung kesiapan jangka panjang siswa, disertai contoh konkret keterkaitannya dengan capaian akademik yang tetap terukur","Menghentikan metode pembelajaran berbasis riset kecil tersebut untuk mengakomodasi kekhawatiran orang tua yang sudah menyuarakan keberatan"], correct:2, e:"Budaya belajar baru yang menghadapi resistensi orang tua membutuhkan komunikasi berbasis bukti yang menjembatani kekhawatiran (pilihan C), bukan menyerah pada resistensi (pilihan D), mengabaikan kekhawatiran yang sah (pilihan A), atau ketidaktransparanan yang berisiko merusak kepercayaan (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa dalam upaya menumbuhkan budaya belajar yang menghargai proses trial and error, sebagian guru masih memberikan komentar yang secara halus meremehkan siswa yang membuat kesalahan berulang, meski tidak secara eksplisit kasar. Langkah paling tepat membangun budaya ini secara konsisten adalah...", opts:["Memberikan contoh konkret dan pelatihan kepada guru mengenai bahasa dan respons yang membangun (growth-oriented feedback) saat menanggapi kesalahan siswa, agar sikap meremehkan yang halus sekalipun tidak lagi terjadi dalam interaksi sehari-hari","Menegur guru yang bersangkutan secara langsung dan tegas di depan forum guru lain, tanpa memberikan contoh konkret respons yang lebih baik","Membiarkan situasi tersebut karena dianggap sebagai gaya komunikasi personal masing-masing guru yang sulit diintervensi","Melarang guru memberikan komentar apa pun terhadap kesalahan siswa untuk menghindari risiko meremehkan secara tidak sengaja"], correct:0, e:"Membangun budaya yang menghargai proses membutuhkan pembekalan konkret mengenai bahasa yang membangun (pilihan A), bukan teguran tanpa solusi konstruktif (pilihan B), membiarkan pola yang merugikan (pilihan C), atau larangan total yang menghilangkan kesempatan memberi umpan balik bermakna (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa upaya menumbuhkan budaya belajar sepanjang hayat di kalangan siswa terhambat karena banyak siswa menganggap belajar hanya relevan untuk keperluan ujian, sehingga minat belajar drastis menurun setelah masa ujian selesai. Langkah paling tepat adalah...", opts:["Menyalahkan sistem penilaian nasional sepenuhnya atas rendahnya minat belajar sepanjang hayat siswa, tanpa mengambil tindakan internal di tingkat sekolah","Merancang kegiatan pembelajaran yang secara eksplisit menghubungkan materi dengan minat dan rasa ingin tahu pribadi siswa di luar konteks ujian, sehingga siswa mengalami langsung bahwa belajar memiliki nilai intrinsik yang tidak bergantung pada penilaian formal","Menerima pola tersebut sebagai hal wajar karena motivasi berbasis ujian dianggap sudah cukup efektif untuk mencapai target akademik sekolah","Meningkatkan frekuensi ujian sepanjang tahun agar siswa terbiasa mempertahankan motivasi belajar secara konsisten setiap saat"], correct:1, e:"Membangun budaya belajar sepanjang hayat membutuhkan pengalaman nyata bahwa belajar bernilai intrinsik, bukan sekadar alat menghadapi ujian (pilihan B)—menambah ujian justru memperkuat asosiasi keliru (pilihan D), menerima pola yang ada (pilihan C), atau menyalahkan faktor eksternal tanpa tindakan internal (pilihan A) tidak menyelesaikan akar masalah."},
+{s:"Profesional", q:"Kepala sekolah menyadari bahwa dalam upaya membangun budaya belajar inklusif, sekolah sudah menyediakan berbagai akomodasi bagi siswa berkebutuhan khusus secara formal, namun budaya sosial informal antar siswa (bagaimana mereka berinteraksi sehari-hari di luar kelas) belum sepenuhnya mencerminkan penerimaan yang setara. Langkah paling tepat adalah...", opts:["Merancang kegiatan yang secara sengaja membangun interaksi bermakna antar seluruh siswa lintas kemampuan (misalnya proyek kolaboratif campuran), sehingga penerimaan tumbuh melalui pengalaman nyata berinteraksi, bukan hanya melalui aturan formal semata","Menegur siswa yang menunjukkan sikap kurang inklusif secara langsung tanpa merancang kesempatan interaksi positif yang membangun penerimaan secara alami","Mempertahankan fokus pada akomodasi formal yang sudah baik, karena budaya sosial informal dianggap berada di luar kendali langsung sekolah","Memisahkan kegiatan sosial informal berdasarkan kelompok kemampuan untuk menghindari potensi gesekan sosial antar siswa"], correct:0, e:"Budaya penerimaan yang mendalam tumbuh melalui pengalaman interaksi bermakna yang dirancang sengaja (pilihan A), bukan hanya mengandalkan aturan formal (pilihan C), teguran tanpa membangun pengalaman positif (pilihan B), atau pemisahan yang justru memperkuat eksklusi (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa hasil observasi kelas selama satu semester menunjukkan pola konsisten: siswa yang duduk di baris depan jauh lebih sering ditunjuk menjawab dan mendapat perhatian guru dibanding siswa yang duduk di belakang, tanpa disadari oleh guru yang bersangkutan. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Membagikan temuan data observasi tersebut secara konstruktif kepada guru, mendiskusikan strategi konkret untuk memastikan perhatian dan kesempatan menjawab terdistribusi merata (misalnya sistem pemanggilan acak), tanpa menghakimi niat guru yang tidak disengaja","Membiarkan pola tersebut karena dianggap sebagai kecenderungan alami yang sulit dihindari dalam mengelola kelas dengan jumlah siswa banyak","Menegur guru tersebut secara terbuka di forum rapat karena dianggap melakukan diskriminasi terhadap siswa yang duduk di belakang","Menugaskan guru untuk mengubah posisi duduk siswa setiap minggu sebagai satu-satunya solusi, tanpa mengatasi pola perhatian guru itu sendiri"], correct:0, e:"Kepemimpinan pembelajaran berbasis data mengidentifikasi bias tak disadari dan mencari solusi konkret secara konstruktif (pilihan A), bukan solusi struktural tanpa mengatasi akar pola perhatian (pilihan D), membiarkan bias berlanjut (pilihan B), atau teguran publik yang tidak konstruktif untuk kesalahan yang tidak disengaja (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa program pembelajaran yang dirancang untuk mendorong kreativitas siswa ternyata secara konsisten menghasilkan karya yang sangat mirip satu sama lain, mengindikasikan bahwa guru secara tidak sadar terlalu banyak memberikan contoh dan arahan detail yang membatasi eksplorasi kreatif siswa. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Mempertahankan pendekatan yang ada karena kemiripan karya dianggap menunjukkan pemahaman yang konsisten terhadap materi yang diajarkan","Mendampingi guru mengevaluasi ulang sejauh mana instruksi dan contoh yang diberikan membatasi ruang eksplorasi siswa, dan merancang pendekatan yang memberi kerangka minimal namun tetap membuka ruang interpretasi dan eksplorasi personal yang lebih luas","Menginstruksikan guru untuk berhenti sepenuhnya memberikan contoh atau arahan apa pun, agar kreativitas siswa berkembang sepenuhnya tanpa pengaruh guru","Mengganti tujuan program tersebut dari mendorong kreativitas menjadi sekadar melatih keterampilan teknis yang lebih mudah diukur keseragamannya"], correct:1, e:"Kepemimpinan pembelajaran yang efektif menyeimbangkan kerangka pendukung dengan ruang eksplorasi otentik siswa (pilihan B), bukan menghilangkan dukungan sepenuhnya (pilihan C), mengabaikan indikasi keterbatasan eksplorasi (pilihan A), atau mengubah tujuan pembelajaran demi kemudahan pengukuran (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menyadari bahwa dalam pembelajaran kelompok, sering terjadi pola di mana satu atau dua siswa dominan mengerjakan sebagian besar tugas kelompok sementara anggota lain pasif, namun nilai kelompok tetap dibagi rata tanpa mempertimbangkan kontribusi individual. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Mempertahankan sistem penilaian kelompok yang ada karena dianggap mengajarkan pentingnya kerja sama meski kontribusi tidak selalu merata","Meminta siswa yang dominan untuk secara sukarela mengurangi kontribusinya agar anggota lain terpaksa lebih aktif berpartisipasi","Mendorong guru merancang struktur kerja kelompok yang memastikan akuntabilitas individual jelas (misalnya pembagian peran spesifik dan penilaian kontribusi personal), sehingga pembelajaran kolaboratif benar-benar melibatkan seluruh anggota secara bermakna","Menghapus seluruh metode pembelajaran kelompok dan menggantinya sepenuhnya dengan tugas individual untuk menghindari masalah kontribusi tidak merata"], correct:2, e:"Kepemimpinan pembelajaran memastikan struktur kolaboratif yang benar-benar melibatkan semua anggota secara akuntabel (pilihan C), bukan menghapus manfaat kerja kelompok sepenuhnya (pilihan D), mengabaikan masalah partisipasi tidak merata (pilihan A), atau solusi yang tidak realistis dan tidak terstruktur (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa hasil belajar siswa pada topik-topik yang diajarkan menjelang jam pulang sekolah secara konsisten lebih rendah dibanding topik yang sama diajarkan pada jam pagi, mengindikasikan pengaruh kelelahan terhadap efektivitas pembelajaran. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Menambah durasi istirahat sebelum jam pelajaran terakhir tanpa mengevaluasi ulang penempatan mata pelajaran yang menuntut konsentrasi tinggi","Mempertahankan jadwal yang ada karena perubahan jadwal dianggap terlalu rumit untuk diimplementasikan mengingat keterbatasan ruang dan guru","Mengevaluasi ulang penjadwalan mata pelajaran yang menuntut konsentrasi tinggi agar lebih banyak ditempatkan di jam-jam dengan tingkat energi siswa optimal, sambil merancang strategi pembelajaran yang lebih adaptif untuk jam-jam dengan tingkat energi rendah","Mengabaikan temuan tersebut karena dianggap sebagai variasi normal yang tidak signifikan memengaruhi capaian belajar secara keseluruhan"], correct:2, e:"Kepemimpinan pembelajaran berbasis data mempertimbangkan pola bio-ritme dalam penjadwalan untuk mengoptimalkan pembelajaran (pilihan C), bukan mengabaikan kerumitan perubahan (pilihan B), solusi parsial tanpa mengatasi akar masalah penjadwalan (pilihan A), atau mengabaikan temuan data yang jelas (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa guru-guru di sekolahnya secara konsisten memberikan waktu tunggu (wait time) yang sangat singkat setelah mengajukan pertanyaan sebelum menunjuk siswa untuk menjawab, sehingga siswa yang membutuhkan waktu berpikir lebih lama jarang mendapat kesempatan menjawab. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Menyarankan guru untuk berhenti menunjuk siswa secara acak dan hanya menerima siswa yang secara sukarela mengangkat tangan untuk menjawab","Memfasilitasi pelatihan singkat mengenai teknik wait time dan dampaknya terhadap kualitas jawaban serta partisipasi siswa yang lebih luas, disertai praktik langsung dan umpan balik dalam observasi kelas berikutnya","Membiarkan pola yang ada karena wait time yang singkat dianggap menjaga ritme dan efisiensi waktu pembelajaran yang terbatas","Menetapkan aturan kaku jumlah detik wait time yang harus diterapkan seluruh guru tanpa memberikan pemahaman mengenai alasan dan manfaat di baliknya"], correct:1, e:"Peningkatan kualitas pembelajaran melalui teknik wait time membutuhkan pemahaman mendalam disertai praktik dan umpan balik (pilihan B), bukan aturan kaku tanpa pemahaman (pilihan D), mengabaikan dampak terhadap partisipasi (pilihan C), atau solusi yang justru mengurangi keterlibatan siswa pasif (pilihan A)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa dalam pembelajaran sains, eksperimen praktikum yang dirancang selalu memiliki hasil yang sudah pasti dan dapat diprediksi (verifikasi konsep), sehingga siswa jarang mengalami proses penyelidikan ilmiah yang otentik dengan hasil yang benar-benar belum diketahui. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Menghentikan seluruh kegiatan praktikum karena keterbatasan untuk merancang eksperimen inkuiri yang benar-benar otentik","Mengganti seluruh eksperimen verifikasi yang ada dengan eksperimen inkuiri terbuka secara langsung tanpa masa transisi bagi guru maupun siswa","Mempertahankan eksperimen verifikasi yang ada karena dianggap lebih aman dan terkendali untuk kondisi laboratorium sekolah yang terbatas","Mendorong dan mendampingi guru merancang sebagian eksperimen berbasis inkuiri terbuka di mana siswa merumuskan pertanyaan dan memprediksi hasil sendiri, melengkapi eksperimen verifikasi yang sudah ada, agar siswa mengalami esensi penyelidikan ilmiah yang otentik"], correct:3, e:"Kepemimpinan pembelajaran sains yang otentik melengkapi verifikasi konsep dengan pengalaman inkuiri nyata secara bertahap (pilihan D), bukan perubahan total tanpa transisi (pilihan B), mempertahankan status quo yang membatasi pengalaman ilmiah otentik (pilihan C), atau menghentikan praktikum sepenuhnya (pilihan A)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa siswa yang mengulang kelas (tinggal kelas) cenderung diberi materi dan metode yang persis sama dengan tahun sebelumnya, dengan asumsi bahwa pengulangan penuh akan menyelesaikan masalah, padahal data menunjukkan pendekatan yang sama tersebut sudah terbukti tidak efektif bagi siswa tersebut tahun lalu. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Mendorong guru merancang pendekatan pembelajaran yang berbeda dan lebih sesuai kebutuhan spesifik siswa yang mengulang, berdasarkan diagnosis akar kesulitan yang dialami tahun sebelumnya, dibanding mengulang pendekatan yang sudah terbukti tidak efektif","Mempertahankan pendekatan dan materi yang sama seperti tahun sebelumnya, karena kurikulum yang berlaku memang menuntut keseragaman materi untuk tingkat kelas yang sama","Membiarkan siswa tersebut mengikuti kelas reguler tanpa penyesuaian khusus apa pun, dengan harapan pengalaman mengulang secara alami akan membantu","Memindahkan siswa yang mengulang tersebut ke sekolah lain yang dianggap memiliki pendekatan yang mungkin lebih sesuai"], correct:0, e:"Kepemimpinan pembelajaran berbasis data mendorong pendekatan yang disesuaikan dengan akar kesulitan spesifik siswa yang mengulang (pilihan A), bukan mengulangi pendekatan yang terbukti gagal (pilihan B), menghindari tanggung jawab dengan memindahkan siswa (pilihan D), atau membiarkan tanpa penyesuaian (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa dalam pembelajaran bahasa, siswa dengan aksen daerah yang kental sering ditertawakan pelan oleh teman sekelas saat membaca nyaring, dan guru cenderung mengabaikan hal ini karena dianggap bukan masalah serius, sehingga siswa tersebut lama-kelamaan enggan berpartisipasi aktif membaca di depan kelas. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Menyarankan siswa dengan aksen kental tersebut untuk berlatih menghilangkan aksennya agar tidak lagi menjadi bahan ejekan teman-temannya","Mengecualikan siswa tersebut dari kegiatan membaca nyaring di depan kelas untuk menghindari situasi yang tidak nyaman baginya","Membiarkan situasi tersebut karena dianggap sebagai dinamika sosial normal antar siswa yang akan mereda dengan sendirinya seiring waktu","Mendampingi guru membangun norma kelas yang eksplisit menghargai keberagaman aksen dan cara berbicara, serta secara proaktif menangani setiap tanda-tanda ejekan sekecil apa pun sebelum berdampak pada partisipasi belajar siswa yang terdampak"], correct:3, e:"Kepemimpinan pembelajaran yang inklusif membangun norma kelas yang menghargai keberagaman secara proaktif (pilihan D), bukan membiarkan dinamika yang merugikan (pilihan C), membebankan penyesuaian kepada siswa yang dirugikan (pilihan A), atau mengecualikan yang justru mengurangi kesempatan belajarnya (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa penerapan pembelajaran berdiferensiasi di sekolahnya dalam praktiknya hanya berupa pemberian soal yang lebih banyak bagi siswa cepat dan soal yang lebih sedikit bagi siswa lambat, tanpa benar-benar membedakan kedalaman, proses, atau produk pembelajaran sesuai kebutuhan masing-masing. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Memfasilitasi pengembangan profesional yang mendalam mengenai berbagai dimensi diferensiasi (konten, proses, produk) disertai contoh konkret penerapannya, agar diferensiasi tidak sekadar mengubah kuantitas soal namun benar-benar responsif terhadap kebutuhan belajar yang berbeda","Menyerahkan sepenuhnya desain diferensiasi kepada masing-masing guru tanpa pengembangan profesional atau kerangka konseptual yang jelas","Mempertahankan praktik yang ada karena setidaknya sudah menunjukkan upaya membedakan perlakuan sesuai kecepatan belajar siswa yang berbeda","Menetapkan jumlah soal yang sama persis bagi seluruh siswa untuk menghindari kesan diskriminatif dalam pemberian tugas"], correct:0, e:"Diferensiasi yang bermakna membutuhkan pemahaman mendalam melampaui sekadar kuantitas soal (pilihan A), bukan mempertahankan pendekatan dangkal yang ada (pilihan C), menghapus diferensiasi sama sekali (pilihan D), atau melepas tanpa dukungan pengembangan kapasitas guru (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa transisi antar aktivitas pembelajaran di banyak kelas (misalnya dari diskusi ke kerja individual) memakan waktu signifikan karena kurang terstruktur, sehingga secara akumulatif mengurangi waktu belajar efektif siswa secara substansial dalam satu hari. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Membiarkan situasi tersebut karena transisi antar aktivitas dianggap sebagai bagian wajar dari dinamika kelas yang tidak signifikan secara akumulatif","Mengurangi jumlah variasi aktivitas pembelajaran dalam satu sesi kelas agar transisi antar aktivitas tidak lagi diperlukan secara signifikan","Menambah durasi setiap sesi pelajaran untuk mengompensasi waktu yang hilang akibat transisi yang kurang efisien","Mendampingi guru merancang rutinitas transisi yang lebih terstruktur dan efisien (misalnya sinyal atau instruksi yang jelas), sehingga waktu belajar efektif dapat dioptimalkan tanpa mengorbankan kualitas setiap aktivitas pembelajaran itu sendiri"], correct:3, e:"Kepemimpinan pembelajaran mengoptimalkan waktu belajar efektif melalui rutinitas transisi yang terstruktur (pilihan D), bukan mengurangi variasi pembelajaran yang bermanfaat (pilihan B), mengabaikan dampak akumulatif yang signifikan (pilihan A), atau menambah durasi tanpa mengatasi akar inefisiensi (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa dalam pembelajaran matematika, siswa yang mampu menjawab benar dengan cara berpikir yang berbeda dari metode standar yang diajarkan sering kali tetap disalahkan oleh guru meski jawaban akhirnya benar, karena dianggap tidak mengikuti prosedur yang 'seharusnya'. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Mewajibkan seluruh guru menerima jawaban benar dengan metode apa pun tanpa pengecualian, tanpa membangun pemahaman guru mengenai kapan validitas metode alternatif perlu dipertimbangkan","Menyarankan siswa dengan cara berpikir berbeda tersebut untuk tetap mengikuti metode standar demi menghindari konflik dengan guru","Mendorong dialog reflektif dengan guru mengenai nilai menghargai strategi berpikir yang beragam selama secara matematis valid, membuka ruang bagi guru untuk mengapresiasi kreativitas penyelesaian masalah siswa dibanding hanya menerima satu metode standar","Mempertahankan pendekatan yang ada karena mengikuti prosedur standar dianggap penting untuk mempersiapkan siswa menghadapi format ujian standar"], correct:2, e:"Kepemimpinan pembelajaran yang menghargai keberagaman cara berpikir membuka dialog reflektif dengan guru mengenai nilai kreativitas matematis (pilihan C), bukan pemaksaan aturan tanpa membangun pemahaman (pilihan A), mempertahankan kekakuan prosedural (pilihan D), atau membebankan penyesuaian kepada siswa yang justru berpikir kreatif dengan benar (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa program bimbingan konseling karir untuk siswa kelas akhir selama ini hanya berupa penyampaian informasi jurusan dan sekolah lanjutan secara umum, tanpa benar-benar mengeksplorasi minat, kekuatan, dan aspirasi personal masing-masing siswa secara individual. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Menyerahkan sepenuhnya eksplorasi minat dan aspirasi karir kepada inisiatif masing-masing siswa dan orang tua di luar program sekolah","Mempertahankan format penyampaian informasi umum yang ada karena dianggap lebih efisien mengingat jumlah siswa kelas akhir yang banyak","Mengganti program bimbingan karir dengan tes minat bakat standar tanpa sesi konseling personal lanjutan untuk membahas hasilnya","Mendorong pengembangan program bimbingan karir yang lebih personal, melibatkan eksplorasi minat dan kekuatan individual siswa melalui sesi konseling yang lebih mendalam, dibanding sekadar penyampaian informasi umum secara massal"], correct:3, e:"Kepemimpinan pembelajaran yang berpusat pada peserta didik memastikan bimbingan karir benar-benar personal dan mendalam (pilihan D), bukan format massal yang tidak menjawab kebutuhan individual (pilihan B), melepas tanggung jawab sekolah (pilihan A), atau tes tanpa tindak lanjut personal yang bermakna (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa siswa yang secara konsisten aktif bertanya dan menunjukkan rasa ingin tahu tinggi terkadang secara tidak sengaja dianggap 'mengganggu' oleh guru karena pertanyaannya dianggap memperlambat jalannya rencana pembelajaran yang sudah disusun ketat. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Mendorong guru merancang fleksibilitas dalam rencana pembelajaran yang mengakomodasi eksplorasi pertanyaan siswa tanpa sepenuhnya mengorbankan pencapaian tujuan pembelajaran inti, memandang pertanyaan aktif sebagai aset bukan gangguan","Meminta guru tetap fokus mengikuti rencana pembelajaran secara ketat tanpa penyimpangan, dan mengarahkan siswa untuk menyimpan pertanyaannya sampai sesi tanya jawab khusus di akhir","Menyarankan siswa tersebut mengurangi frekuensi bertanya di kelas dan menyimpan rasa ingin tahunya untuk dieksplorasi secara mandiri di luar jam pelajaran","Membiarkan situasi tersebut karena guru dianggap lebih memahami keseimbangan antara mengakomodasi pertanyaan dan mengejar target kurikulum"], correct:0, e:"Kepemimpinan pembelajaran memandang rasa ingin tahu aktif sebagai aset pembelajaran yang perlu diakomodasi dengan fleksibilitas terstruktur (pilihan A), bukan kekakuan yang meredam rasa ingin tahu (pilihan B), membiarkan pola yang merugikan tanpa arahan (pilihan D), atau membebankan penyesuaian kepada siswa yang justru menunjukkan kualitas positif (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa sekolah menerima bantuan peralatan olahraga dalam jumlah besar dari sebuah program pemerintah, namun sebagian besar peralatan tersebut tidak sesuai dengan cabang olahraga yang benar-benar diminati dan dikembangkan siswa di sekolahnya. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Menyimpan seluruh peralatan tersebut di gudang tanpa pemanfaatan apa pun karena dianggap tidak relevan dengan kebutuhan sekolah saat ini","Membiarkan peralatan tersebut digunakan sesuka hati oleh siapa pun tanpa pengelolaan atau pencatatan penggunaan yang jelas","Menjual atau menukar peralatan tersebut dengan sekolah lain secara informal tanpa melaporkannya kepada pemberi program maupun mencatatnya secara resmi","Mengevaluasi kemungkinan memanfaatkan peralatan tersebut secara kreatif untuk memperkenalkan cabang olahraga baru kepada siswa, sambil melaporkan secara transparan ketidaksesuaian tersebut kepada pemberi program untuk perbaikan distribusi di masa mendatang"], correct:3, e:"Pengelolaan sumber daya yang efektif dan akuntabel mengoptimalkan pemanfaatan aset yang ada secara kreatif sambil tetap transparan kepada pemberi (pilihan D), bukan membiarkan aset tidak termanfaatkan (pilihan A), pertukaran informal tanpa pencatatan resmi (pilihan C), atau pengelolaan tanpa kontrol yang jelas (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa proses verifikasi dan pencairan dana bantuan siswa miskin (misalnya PIP) mengalami keterlambatan berulang setiap tahun karena data siswa yang diajukan sering tidak sinkron dengan basis data pemerintah, meski sudah diperbarui secara manual oleh operator sekolah. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Melakukan audit menyeluruh terhadap proses input dan verifikasi data siswa penerima bantuan untuk mengidentifikasi akar penyebab ketidaksinkronan secara sistematis, dibanding terus mengandalkan perbaikan manual berulang setiap tahun tanpa memahami sumber masalahnya","Mengurangi jumlah siswa yang diajukan sebagai penerima bantuan agar proses verifikasi menjadi lebih sederhana dan cepat diselesaikan","Mempertahankan proses perbaikan manual yang ada setiap tahun karena dianggap sudah menjadi rutinitas standar yang bisa diselesaikan operator sekolah","Menyerahkan sepenuhnya tanggung jawab penyelesaian ketidaksinkronan data kepada pihak dinas pendidikan tanpa upaya perbaikan proses internal sekolah"], correct:0, e:"Pengelolaan sumber daya yang efektif mengatasi masalah berulang melalui audit sistematis terhadap akar penyebab (pilihan A), bukan mengulang perbaikan manual tanpa pemahaman mendalam (pilihan C), melepas tanggung jawab sepenuhnya (pilihan D), atau mengorbankan hak siswa yang berhak menerima bantuan demi kemudahan proses (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa dana sumbangan sukarela dari alumni yang terkumpul cukup besar untuk renovasi lapangan, namun sebagian alumni penyumbang menginginkan laporan penggunaan dana secara detail dan berkala, sementara mekanisme pelaporan keuangan sekolah selama ini hanya dirancang untuk pelaporan tahunan formal kepada dinas. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Menolak sumbangan tersebut karena permintaan pelaporan detail dan berkala dianggap terlalu merepotkan dan di luar mekanisme standar sekolah","Menyampaikan laporan secara informal melalui percakapan lisan dengan alumni penyumbang tanpa dokumentasi tertulis yang bisa dipertanggungjawabkan","Menggunakan mekanisme pelaporan tahunan formal yang sudah ada untuk seluruh sumber dana, termasuk dana alumni, tanpa penyesuaian khusus terhadap harapan transparansi tambahan","Merancang mekanisme pelaporan tambahan yang lebih sering dan detail khusus untuk dana sumbangan alumni tersebut, sesuai harapan transparansi penyumbang, tanpa perlu mengubah sistem pelaporan formal tahunan yang sudah berjalan untuk dana lain"], correct:3, e:"Pengelolaan sumber daya yang transparan dan akuntabel menyesuaikan mekanisme pelaporan sesuai kebutuhan spesifik sumber dana dan harapan pemangku kepentingan (pilihan D), bukan memaksakan mekanisme standar yang tidak responsif (pilihan C), menolak kontribusi bermanfaat (pilihan A), atau pelaporan informal tanpa dokumentasi (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa penggunaan air bersih sekolah meningkat signifikan dalam beberapa bulan terakhir tanpa penjelasan jelas, membebani anggaran operasional, dan setelah ditelusuri kemungkinan besar disebabkan oleh kebocoran pipa yang belum terdeteksi di area yang jarang diperiksa. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Mengabaikan peningkatan biaya air tersebut karena dianggap sebagai fluktuasi musiman yang wajar terjadi tanpa perlu investigasi khusus","Segera melakukan pemeriksaan menyeluruh terhadap sistem perpipaan sekolah termasuk area yang jarang diperiksa, memperbaiki kebocoran yang ditemukan, dan merancang jadwal pemeriksaan rutin untuk mencegah pemborosan serupa terulang di masa mendatang","Menunggu tagihan air beberapa bulan ke depan untuk memastikan tren peningkatan tersebut konsisten sebelum mengambil tindakan investigasi lebih lanjut","Mengurangi penggunaan air di area-area yang diketahui secara umum tanpa melakukan investigasi spesifik terhadap sumber kebocoran yang mungkin terjadi"], correct:1, e:"Pengelolaan sumber daya yang proaktif segera menginvestigasi dan mengatasi sumber pemborosan sambil merancang pencegahan jangka panjang (pilihan B), bukan menunda tindakan untuk konfirmasi lebih lanjut (pilihan C), solusi umum tanpa mengatasi akar masalah spesifik (pilihan D), atau mengabaikan indikasi pemborosan yang signifikan (pilihan A)."},
+{s:"Profesional", q:"Kepala sekolah harus memutuskan strategi pengelolaan dana cadangan darurat sekolah: menyimpannya sepenuhnya sebagai dana tunai yang mudah diakses kapan pun dibutuhkan, atau menempatkan sebagian dalam bentuk yang menghasilkan nilai tambah (misalnya deposito berjangka pendek) namun dengan akses yang sedikit lebih lambat saat darurat. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Menempatkan seluruh dana cadangan dalam instrumen yang menghasilkan nilai tambah maksimal, karena kebutuhan darurat dianggap jarang terjadi","Menyimpan seluruh dana cadangan sebagai tunai murni tanpa penempatan apa pun, demi memastikan aksesibilitas penuh kapan pun dibutuhkan tanpa risiko keterlambatan","Menggunakan dana cadangan tersebut untuk kebutuhan operasional rutin sekolah karena dianggap sudah lama tidak terpakai untuk keperluan darurat","Menempatkan sebagian dana cadangan dalam instrumen yang aman dan mudah dicairkan dengan sedikit nilai tambah, sambil tetap menjaga porsi tunai yang cukup untuk kebutuhan darurat mendesak, menyeimbangkan antara aksesibilitas dan optimalisasi nilai dana"], correct:3, e:"Pengelolaan sumber daya yang efektif menyeimbangkan aksesibilitas darurat dengan optimalisasi nilai dana secara proporsional dan aman (pilihan D), bukan pendekatan ekstrem tunai penuh yang kehilangan potensi nilai tambah (pilihan B), risiko keterlambatan akses darurat (pilihan A), atau penyalahgunaan dana cadangan untuk kebutuhan rutin (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa proses pengadaan buku pelajaran tahun ini melibatkan tiga tahap persetujuan internal yang memakan waktu sangat lama, sehingga buku sering terlambat sampai ke siswa di awal tahun ajaran, namun proses tersebut sebenarnya dirancang untuk mencegah kesalahan pengadaan yang pernah terjadi di masa lalu. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Mempertahankan ketiga tahap persetujuan tersebut apa adanya karena dianggap penting untuk mencegah pengulangan kesalahan pengadaan di masa lalu","Menghapus seluruh tahap persetujuan tersebut demi mempercepat proses pengadaan buku, mengingat pentingnya ketersediaan buku tepat waktu bagi siswa","Mengevaluasi dan menyederhanakan proses persetujuan tanpa menghilangkan esensi kontrol yang diperlukan, misalnya menggabungkan tahap yang bisa dilakukan paralel dibanding berurutan, agar kecepatan dan akuntabilitas sama-sama terjaga","Memulai proses pengadaan jauh lebih awal dari biasanya tanpa mengevaluasi efisiensi proses persetujuan yang berlangsung lama itu sendiri"], correct:2, e:"Pengelolaan sumber daya yang efektif dan akuntabel menyederhanakan proses tanpa mengorbankan kontrol esensial (pilihan C), bukan mempertahankan inefisiensi yang berdampak nyata pada siswa (pilihan A), menghapus kontrol yang penting (pilihan B), atau solusi yang menghindari evaluasi akar masalah proses itu sendiri (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa dana operasional untuk perawatan taman dan area hijau sekolah sering dianggap sebagai pos 'kurang penting' dan menjadi yang pertama dipotong saat terjadi keterbatasan anggaran, meski area hijau tersebut sebenarnya berkontribusi terhadap kenyamanan belajar dan kesehatan lingkungan sekolah secara keseluruhan. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Meminta siswa dan guru secara sukarela merawat taman tanpa anggaran resmi apa pun sebagai pengganti alokasi dana yang dipotong","Mengevaluasi ulang prioritas anggaran dengan mempertimbangkan kontribusi nyata area hijau terhadap kualitas lingkungan belajar, mengalokasikan anggaran perawatan minimal yang tetap menjaga fungsi dasarnya meski dalam kondisi keterbatasan anggaran","Menghapus seluruh anggaran perawatan taman secara permanen dan mengalihkan area tersebut menjadi lahan yang tidak memerlukan perawatan rutin","Mempertahankan kebijakan yang ada karena perawatan taman memang secara wajar menjadi prioritas terakhir dibanding kebutuhan akademik yang lebih mendesak"], correct:1, e:"Pengelolaan sumber daya yang bijak mengevaluasi ulang asumsi prioritas berdasarkan kontribusi nyata terhadap kualitas lingkungan belajar (pilihan B), bukan mempertahankan asumsi tanpa evaluasi (pilihan D), menghapus fungsi penting secara permanen (pilihan C), atau mengalihkan tanggung jawab tanpa dukungan sumber daya yang memadai (pilihan A)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa sistem penomoran dan pelabelan aset sekolah (meja, kursi, alat peraga) sangat tidak konsisten—sebagian diberi label, sebagian tidak, dengan format yang berbeda-beda tergantung siapa yang mencatat di masa lalu—sehingga sulit melakukan pelacakan dan audit aset secara akurat. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Merancang dan menerapkan sistem pelabelan dan pencatatan aset yang terstandardisasi untuk seluruh aset sekolah secara bertahap, dimulai dari aset bernilai tinggi terlebih dahulu, agar pelacakan dan audit ke depan menjadi lebih akurat dan efisien","Membiarkan sistem yang tidak konsisten tersebut karena merapikan seluruh pelabelan aset dianggap memakan waktu terlalu banyak dibanding manfaatnya","Menyerahkan sepenuhnya perapian sistem pelabelan kepada staf tata usaha tanpa arahan standar yang jelas dari kepala sekolah","Menghapus seluruh label aset yang ada dan memulai dari nol tanpa mempertimbangkan data pencatatan yang sudah ada sebelumnya"], correct:0, e:"Pengelolaan aset yang akuntabel membangun sistem terstandardisasi secara bertahap dan prioritas yang jelas (pilihan A), bukan membiarkan ketidakkonsistenan berlanjut (pilihan B), tanpa arahan standar yang jelas (pilihan C), atau memulai dari nol yang membuang data historis yang masih berguna (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa dana yang dianggarkan untuk pengembangan perpustakaan sekolah tahun ini terpaksa harus dialihkan sebagian untuk menutupi kebutuhan mendesak perbaikan atap yang bocor parah menjelang musim hujan, meski kedua kebutuhan tersebut sama-sama penting bagi kualitas pendidikan. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Membagi dana yang tersedia secara merata antara kedua kebutuhan tersebut meski keduanya menjadi tidak optimal karena keterbatasan dana","Melakukan realokasi sesuai prosedur resmi dengan mendokumentasikan alasan urgensi keselamatan dan operasional dari perbaikan atap, serta menyusun rencana untuk melanjutkan pengembangan perpustakaan pada periode anggaran berikutnya begitu kebutuhan mendesak teratasi","Mengalihkan seluruh dana perpustakaan secara permanen ke perbaikan atap tanpa merencanakan kelanjutan program perpustakaan di masa mendatang","Menunda perbaikan atap yang bocor sampai musim hujan berlalu, agar rencana pengembangan perpustakaan yang sudah disusun tidak perlu diubah sama sekali"], correct:1, e:"Pengelolaan sumber daya yang adaptif mendahulukan urgensi keselamatan melalui prosedur resmi sambil tetap merencanakan kelanjutan prioritas lain (pilihan B), bukan menunda perbaikan mendesak yang berisiko (pilihan D), mengorbankan program penting secara permanen (pilihan C), atau pembagian yang membuat keduanya tidak optimal (pilihan A)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa dua staf tata usaha memiliki beban kerja yang sangat tidak seimbang—satu staf mengerjakan hampir seluruh tugas administrasi keuangan yang kompleks, sementara staf lain hanya menangani tugas-tugas administratif ringan, meski keduanya memiliki gaji dan jam kerja yang sama. Langkah pengelolaan sumber daya manusia paling tepat adalah...", opts:["Menambah gaji staf yang menangani tugas lebih kompleks sebagai kompensasi, tanpa mengubah pembagian beban kerja yang tidak seimbang tersebut","Mengevaluasi kembali pembagian tugas berdasarkan kompetensi dan beban kerja yang lebih proporsional, sambil mempertimbangkan pelatihan tambahan bagi staf yang saat ini menangani tugas ringan agar mampu berbagi beban tugas yang lebih kompleks","Mempertahankan pembagian tugas yang ada karena staf yang menangani tugas kompleks sudah terbiasa dan dianggap lebih efisien menyelesaikannya sendiri","Mengurangi jam kerja staf yang menangani tugas ringan agar proporsional dengan beban kerja yang lebih ringan dibanding rekan kerjanya"], correct:1, e:"Pengelolaan sumber daya manusia yang adil mengevaluasi dan menyeimbangkan pembagian tugas sambil membangun kapasitas (pilihan B), bukan mempertahankan ketimpangan (pilihan C), kompensasi finansial tanpa mengatasi ketimpangan struktural (pilihan A), atau mengurangi jam kerja yang tidak menyelesaikan masalah ketimpangan kompetensi (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa proses pengadaan alat kebersihan sekolah selama bertahun-tahun selalu menggunakan vendor yang sama tanpa pernah dibandingkan dengan penawaran vendor lain, meski secara kualitas dan harga belum tentu yang paling kompetitif saat ini. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Melakukan perbandingan penawaran dengan beberapa vendor lain secara berkala untuk memastikan harga dan kualitas yang diterima sekolah tetap kompetitif, tanpa serta-merta mengasumsikan vendor lama masih menjadi pilihan terbaik hanya karena faktor kebiasaan","Mengganti vendor secara langsung ke vendor lain yang menawarkan harga lebih murah tanpa evaluasi menyeluruh terhadap kualitas dan rekam jejak pelayanan","Membiarkan proses pengadaan berjalan seperti biasa karena mengubah kebiasaan yang sudah berjalan lama dianggap berisiko mengganggu kelancaran operasional","Mempertahankan vendor yang sama karena hubungan kerja sama jangka panjang dianggap lebih penting dibanding potensi penghematan dari perbandingan harga"], correct:0, e:"Pengelolaan sumber daya yang akuntabel secara berkala mengevaluasi kompetitivitas vendor melalui perbandingan objektif (pilihan A), bukan mempertahankan kebiasaan tanpa evaluasi (pilihan D dan C), atau berganti vendor hanya berdasarkan harga tanpa evaluasi kualitas menyeluruh (pilihan B)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa dana bantuan operasional sekolah tahun ini turun lebih kecil dari proyeksi awal karena perubahan kebijakan penghitungan di tingkat pusat, sehingga beberapa program yang sudah direncanakan dalam RKAS berpotensi tidak dapat dilaksanakan penuh sesuai rencana. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Mempertahankan seluruh rencana program dalam RKAS awal dan mencari pinjaman dana dari pihak eksternal untuk menutupi kekurangan tanpa melalui mekanisme resmi","Membatalkan seluruh program yang direncanakan tahun ini dan menundanya sepenuhnya ke tahun depan tanpa upaya penyesuaian prioritas","Melakukan revisi RKAS secara resmi dengan menyusun ulang prioritas program berdasarkan dampak terbesar terhadap kualitas pendidikan, mengkomunikasikan perubahan tersebut secara transparan kepada dewan guru dan komite sekolah","Mengurangi kualitas pelaksanaan seluruh program secara merata tanpa mempertimbangkan mana yang berdampak lebih besar bagi kualitas pendidikan"], correct:2, e:"Pengelolaan sumber daya yang adaptif dan akuntabel merevisi prioritas melalui mekanisme resmi dengan transparansi kepada pemangku kepentingan (pilihan C), bukan mencari pendanaan di luar prosedur (pilihan A), membatalkan seluruh program tanpa penyesuaian prioritas (pilihan B), atau pengurangan merata yang mengorbankan kualitas program penting (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa ruang UKS (Unit Kesehatan Sekolah) memiliki perlengkapan P3K yang sebagian sudah kedaluwarsa dan tidak pernah diperiksa secara berkala, sementara anggaran kesehatan sekolah sering dianggap sebagai pos yang tidak mendesak dibanding kebutuhan akademik lainnya. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Meminta orang tua siswa secara sukarela menyumbangkan perlengkapan P3K sebagai pengganti alokasi anggaran resmi dari sekolah","Mengalokasikan anggaran kesehatan hanya ketika ada kejadian darurat yang benar-benar terjadi, dibanding menyediakan anggaran rutin preventif","Menetapkan jadwal pemeriksaan dan pembaruan rutin perlengkapan P3K sebagai bagian dari standar operasional wajib, mengalokasikan anggaran minimal namun konsisten untuk kebutuhan kesehatan dasar ini terlepas dari tekanan prioritas anggaran akademik","Mempertahankan kondisi yang ada karena kejadian darurat kesehatan di sekolah dianggap jarang terjadi sehingga tidak memerlukan perhatian anggaran khusus"], correct:2, e:"Pengelolaan sumber daya yang bertanggung jawab terhadap keselamatan menetapkan standar preventif yang konsisten terlepas dari tekanan prioritas lain (pilihan C), bukan mengabaikan risiko kesehatan (pilihan D), pendekatan reaktif yang berisiko fatal (pilihan B), atau melimpahkan tanggung jawab dasar keselamatan kepada pihak lain (pilihan A)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa jaringan internet sekolah yang digunakan untuk keperluan administrasi dan pembelajaran digital sering mengalami gangguan pada jam-jam sibuk, namun investigasi awal menunjukkan sebagian bandwidth justru terpakai oleh perangkat yang tidak terkait langsung dengan kegiatan resmi sekolah. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Membiarkan situasi tersebut karena mengatur akses internet dianggap terlalu rumit dan berpotensi menimbulkan keluhan dari warga sekolah","Menambah kapasitas bandwidth internet secara signifikan tanpa mengevaluasi dan mengatasi penyebab penggunaan yang tidak semestinya terlebih dahulu","Menerapkan kebijakan pengelolaan akses jaringan yang jelas (misalnya prioritas bandwidth untuk keperluan pembelajaran dan administrasi, pembatasan akses perangkat tidak resmi), dikomunikasikan secara transparan kepada seluruh warga sekolah","Memutus akses internet sepenuhnya di luar jam pembelajaran resmi tanpa mempertimbangkan kebutuhan administratif yang mungkin muncul di luar jam tersebut"], correct:2, e:"Pengelolaan sumber daya digital yang efektif menetapkan kebijakan akses yang jelas dan transparan mengatasi akar masalah (pilihan C), bukan menambah biaya tanpa mengatasi penyebab (pilihan B), membiarkan masalah berlanjut (pilihan A), atau pembatasan kaku yang mengabaikan kebutuhan operasional wajar (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa proses serah terima jabatan bendahara sekolah yang baru saja terjadi tidak disertai dokumentasi transisi yang lengkap, sehingga bendahara baru kesulitan memahami beberapa keputusan keuangan yang diambil pendahulunya di masa lalu. Langkah pengelolaan sumber daya paling tepat untuk mencegah masalah serupa di masa mendatang adalah...", opts:["Menganggap situasi tersebut sebagai risiko yang wajar terjadi dalam setiap pergantian pejabat, tanpa perlu tindakan pencegahan sistemik","Merancang standar operasional prosedur serah terima jabatan keuangan yang mewajibkan dokumentasi transisi lengkap (termasuk catatan keputusan dan konteks penting), diterapkan konsisten untuk setiap pergantian pemegang posisi keuangan di masa mendatang","Menghubungi bendahara sebelumnya setiap kali muncul pertanyaan, sebagai solusi berkelanjutan tanpa membangun sistem dokumentasi formal","Meminta bendahara baru untuk mempelajari sendiri dokumen-dokumen keuangan yang ada tanpa pendampingan transisi khusus dari bendahara sebelumnya"], correct:1, e:"Pengelolaan sumber daya yang akuntabel membangun sistem dokumentasi transisi yang standar dan konsisten (pilihan B), bukan membiarkan bendahara baru belajar sendiri tanpa dukungan (pilihan D), bergantung pada ketersediaan personal yang tidak berkelanjutan (pilihan C), atau menerima risiko tanpa pencegahan sistemik (pilihan A)."},
+{s:"Profesional", q:"Kepala sekolah menyadari bahwa budaya belajar yang ia bangun terlalu menitikberatkan pada pencapaian target kurikulum secara ketat, sehingga momen-momen belajar spontan yang muncul dari rasa ingin tahu siswa di luar rencana pelajaran (misalnya pertanyaan tak terduga tentang fenomena alam) jarang mendapat ruang eksplorasi karena dianggap mengganggu jadwal. Langkah paling tepat adalah...", opts:["Menginstruksikan guru untuk sepenuhnya mengikuti rasa ingin tahu spontan siswa kapan pun muncul, meski berisiko signifikan terhadap pencapaian target kurikulum yang direncanakan","Mendorong guru mengembangkan kepekaan untuk mengenali dan memanfaatkan momen belajar spontan tersebut secara bijak, mengintegrasikannya secara singkat ke pembelajaran tanpa mengorbankan pencapaian target kurikulum secara keseluruhan","Mempertahankan fokus ketat pada target kurikulum karena momen belajar spontan dianggap sebagai gangguan yang mengurangi efisiensi pencapaian tujuan pembelajaran resmi","Menjadwalkan waktu khusus terpisah setiap minggu untuk eksplorasi rasa ingin tahu spontan siswa, sepenuhnya terpisah dari jam pelajaran reguler"], correct:1, e:"Budaya belajar yang hidup menyeimbangkan pencapaian target dengan kepekaan terhadap momen belajar bermakna (pilihan B), bukan mengorbankan struktur kurikulum sepenuhnya (pilihan A), mengabaikan nilai momen spontan (pilihan C), atau memisahkannya sepenuhnya dari konteks pembelajaran reguler yang justru paling relevan (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa budaya belajar yang menghargai kejujuran dalam mengakui ketidaktahuan ('saya belum paham') masih lemah di sekolahnya—siswa cenderung berpura-pura paham daripada mengakui kebingungan, karena khawatir dianggap kurang pintar oleh teman-temannya. Langkah paling tepat membangun budaya ini adalah...", opts:["Mendorong guru secara konsisten memodelkan sikap terbuka terhadap ketidaktahuan (termasuk mengakui saat guru sendiri tidak tahu jawaban), sambil membangun norma kelas yang menghargai kejujuran mengakui kebingungan sebagai langkah awal menuju pemahaman, bukan tanda kelemahan","Membiarkan situasi tersebut karena dianggap sebagai dinamika sosial normal antar siswa yang sulit diubah melalui intervensi sekolah","Mengadakan sesi khusus tentang pentingnya kejujuran secara umum, tanpa secara spesifik memodelkan atau membangun norma kelas terkait pengakuan ketidaktahuan","Menghukum siswa yang berpura-pura paham padahal sebenarnya bingung, sebagai bentuk penegakan disiplin kejujuran akademik di kelas"], correct:0, e:"Budaya kejujuran akademik yang mendalam tumbuh melalui pemodelan nyata dan norma kelas yang dibangun konsisten (pilihan A), bukan pendekatan punitif yang justru memperkuat rasa takut mengakui kebingungan (pilihan D), membiarkan pola yang merugikan (pilihan B), atau edukasi umum tanpa penerapan konkret dalam interaksi kelas (pilihan C)."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa dalam pembelajaran IPS, diskusi kelas tentang isu-isu sosial kontroversial cenderung dihindari sepenuhnya oleh guru karena khawatir menimbulkan konflik pendapat antar siswa, padahal kemampuan berdiskusi secara sehat tentang perbedaan pandangan adalah keterampilan penting yang seharusnya dilatih. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Membiarkan guru menentukan sendiri apakah akan membahas isu kontroversial atau tidak, tanpa dukungan pengembangan keterampilan fasilitasi dari kepala sekolah","Mendampingi guru mengembangkan keterampilan memfasilitasi diskusi isu kontroversial secara aman dan konstruktif (misalnya aturan dasar diskusi yang saling menghormati), sehingga siswa tetap terlatih berdialog tentang perbedaan pandangan tanpa menciptakan konflik destruktif","Mendorong guru untuk sepenuhnya menghindari topik kontroversial apa pun di kelas, demi menjaga suasana kelas yang selalu harmonis tanpa perdebatan","Mewajibkan setiap kelas membahas sejumlah isu kontroversial tertentu tanpa terlebih dahulu membekali guru dengan keterampilan memfasilitasi diskusi yang aman"], correct:1, e:"Kepemimpinan pembelajaran melatih keterampilan berpikir kritis melalui fasilitasi yang aman dan terstruktur (pilihan B), bukan menghindari topik penting sepenuhnya (pilihan C), membiarkan tanpa dukungan pengembangan kapasitas (pilihan A), atau memaksakan tanpa pembekalan yang memadai (pilihan D)."},
+{s:"Profesional", q:"Kepala sekolah mendapati bahwa penilaian portofolio yang diterapkan sebagai bagian dari asesmen berpusat pada peserta didik dalam praktiknya hanya menjadi kumpulan tugas yang dijilid rapi tanpa proses refleksi mendalam siswa mengenai perkembangan belajarnya sendiri. Langkah kepemimpinan pembelajaran paling tepat adalah...", opts:["Menghapus penggunaan portofolio sebagai bentuk asesmen karena dianggap tidak efektif dalam praktiknya selama ini","Mendampingi guru merancang panduan refleksi terstruktur yang mendorong siswa benar-benar menganalisis perkembangan dan pembelajarannya sendiri saat menyusun portofolio, bukan sekadar mengumpulkan tugas tanpa proses metakognitif yang bermakna","Menambah jumlah tugas yang harus dimasukkan ke dalam portofolio tanpa mengubah esensi proses refleksi yang masih lemah","Mempertahankan format portofolio yang ada karena setidaknya sudah mendokumentasikan hasil kerja siswa secara terorganisir dan rapi"], correct:1, e:"Portofolio yang bermakna membutuhkan proses refleksi metakognitif yang terstruktur, bukan sekadar kumpulan dokumen (pilihan B)—mempertahankan format dangkal (pilihan D), menghapus instrumen yang berpotensi bermanfaat (pilihan A), atau menambah kuantitas tanpa memperbaiki esensi (pilihan C) semuanya tidak menjawab akar masalah."},
+{s:"Profesional", q:"Kepala sekolah menemukan bahwa sekolah memiliki beberapa unit komputer lama yang masih berfungsi namun sudah tidak digunakan karena dianggap ketinggalan zaman, sementara di sisi lain ada usulan pengadaan komputer baru dengan anggaran terbatas yang mencukupi. Langkah pengelolaan sumber daya paling tepat adalah...", opts:["Mempertahankan komputer lama tersebut tanpa pengadaan baru, karena dianggap masih berfungsi meski dinilai ketinggalan zaman","Langsung mengganti seluruh komputer lama dengan yang baru sesuai usulan, tanpa mengevaluasi potensi pemanfaatan sisa unit lama untuk kebutuhan yang lebih sederhana","Menjual seluruh komputer lama tanpa evaluasi terlebih dahulu untuk menutupi sebagian biaya pengadaan komputer baru","Mengevaluasi terlebih dahulu apakah unit komputer lama tersebut masih bisa dioptimalkan untuk kebutuhan tertentu (misalnya latihan mengetik dasar) sebelum memutuskan pengadaan baru, agar sumber daya yang ada dimanfaatkan optimal sebelum berinvestasi pada aset baru"], correct:3, e:"Pengelolaan sumber daya yang efektif mengoptimalkan aset yang ada sebelum berinvestasi baru (pilihan D), bukan mengabaikan potensi pemanfaatan aset lama (pilihan B), mempertahankan tanpa peningkatan yang dibutuhkan (pilihan A), atau melepas aset tanpa evaluasi potensi manfaatnya terlebih dahulu (pilihan C)."},
+];
+
+const QUESTIONS = RAW.map((r,i)=>({
+  id:i+1,
+  section:r.s,
+  text:r.q,
+  options:r.opts,
+  correct:r.correct,
+  explain:r.e
+}));
+
+const SECTIONS = ["Kepribadian","Sosial","Profesional"];
+const LETTERS = ["A","B","C","D"];
+
+/* ======================= STATE ======================= */
+let answers = new Array(QUESTIONS.length).fill(null);
+let current = 0;
+let submitted = false;
+let timeLeft = 120*60;
+let timerId = null;
+
+/* ======================= DOM refs ======================= */
+const startScreen = document.getElementById('startScreen');
+const quizScreen = document.getElementById('quizScreen');
+const resultScreen = document.getElementById('resultScreen');
+const clockEl = document.getElementById('clock');
+const mapPanel = document.getElementById('mapPanel');
+const qTag = document.getElementById('qTag');
+const qIdx = document.getElementById('qIdx');
+const qText = document.getElementById('qText');
+const qOptions = document.getElementById('qOptions');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const finishBtn = document.getElementById('finishBtn');
+
+document.getElementById('startBtn').addEventListener('click', startQuiz);
+prevBtn.addEventListener('click', ()=>{ if(current>0){current--; renderQuestion();} });
+nextBtn.addEventListener('click', ()=>{ if(current<QUESTIONS.length-1){current++; renderQuestion();} });
+finishBtn.addEventListener('click', ()=>{ if(confirm('Yakin ingin menyelesaikan dan mengirim jawaban? Soal yang belum dijawab akan dianggap kosong.')){ submitTest(); } });
+
+function startQuiz(){
+  startScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  renderMap();
+  renderQuestion();
+  startTimer();
+}
+
+function startTimer(){
+  timerId = setInterval(()=>{
+    timeLeft--;
+    updateClock();
+    if(timeLeft<=0){
+      clearInterval(timerId);
+      submitTest();
+    }
+  },1000);
+}
+
+function updateClock(){
+  const h = Math.floor(timeLeft/3600);
+  const m = Math.floor((timeLeft%3600)/60);
+  const s = timeLeft%60;
+  const pad = n=>String(n).padStart(2,'0');
+  clockEl.textContent = pad(h)+":"+pad(m)+":"+pad(s);
+  if(timeLeft<=300){ clockEl.classList.add('warn'); }
+}
+
+function renderMap(){
+  mapPanel.innerHTML = '<h2>Peta Soal</h2>';
+  SECTIONS.forEach(sec=>{
+    const qsInSection = QUESTIONS.filter(q=>q.section===sec);
+    const group = document.createElement('div');
+    group.className = 'section-group';
+    const answeredCount = qsInSection.filter(q=>answers[q.id-1]!==null).length;
+    group.innerHTML = '<div class="section-name">'+sec+'<span class="count">'+answeredCount+'/'+qsInSection.length+'</span></div>';
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    qsInSection.forEach(q=>{
+      const btn = document.createElement('button');
+      btn.className = 'qnum';
+      btn.textContent = q.id;
+      btn.id = 'map-q'+q.id;
+      btn.addEventListener('click', ()=>{ current = q.id-1; renderQuestion(); });
+      grid.appendChild(btn);
+    });
+    group.appendChild(grid);
+    mapPanel.appendChild(group);
+  });
+  const prog = document.createElement('div');
+  prog.className = 'progress-line';
+  prog.id = 'progressLine';
+  mapPanel.appendChild(prog);
+  updateMapStates();
+}
+
+function updateMapStates(){
+  QUESTIONS.forEach(q=>{
+    const btn = document.getElementById('map-q'+q.id);
+    if(!btn) return;
+    btn.classList.toggle('answered', answers[q.id-1]!==null);
+    btn.classList.toggle('current', q.id-1===current);
+    if(submitted){
+      btn.classList.toggle('correct', answers[q.id-1]===q.correct);
+      btn.classList.toggle('wrong', answers[q.id-1]!==null && answers[q.id-1]!==q.correct);
+    }
+  });
+  const answeredTotal = answers.filter(a=>a!==null).length;
+  const pl = document.getElementById('progressLine');
+  if(pl) pl.innerHTML = '<strong>'+answeredTotal+'</strong> dari '+QUESTIONS.length+' soal terjawab';
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[current];
+  qTag.textContent = q.section;
+  qIdx.textContent = 'Soal '+q.id+' dari '+QUESTIONS.length;
+  qText.textContent = q.text;
+  qOptions.innerHTML = '';
+  q.options.forEach((optText, i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = '<span class="letter">'+LETTERS[i]+'</span><span>'+optText+'</span>';
+    if(answers[current]===i) btn.classList.add('selected');
+    btn.addEventListener('click', ()=>{
+      if(submitted) return;
+      answers[current] = i;
+      renderQuestion();
+      updateMapStates();
+    });
+    qOptions.appendChild(btn);
+  });
+  prevBtn.disabled = current===0;
+  nextBtn.disabled = current===QUESTIONS.length-1;
+  updateMapStates();
+}
+
+function submitTest(){
+  submitted = true;
+  clearInterval(timerId);
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+  renderResults();
+}
+
+function renderResults(){
+  const total = QUESTIONS.length;
+  let correctCount = 0;
+  const bySection = {};
+  SECTIONS.forEach(s=>bySection[s]={correct:0,total:0});
+
+  QUESTIONS.forEach(q=>{
+    bySection[q.section].total++;
+    if(answers[q.id-1]===q.correct){
+      correctCount++;
+      bySection[q.section].correct++;
+    }
+  });
+
+  const score = Math.round((correctCount/total)*100);
+  document.getElementById('resultHeadline').textContent = 'Skor Anda: '+score+' ('+correctCount+'/'+total+' benar)';
+  document.getElementById('resultSub').textContent = score>=70
+    ? 'Hasil yang baik. Perkuat bagian dengan skor terendah di bawah untuk persiapan lebih matang.'
+    : 'Masih ada ruang perbaikan. Pelajari pembahasan tiap bagian di bawah, terutama dimensi dengan skor terendah.';
+
+  const summaryEl = document.getElementById('resultsSummary');
+  summaryEl.innerHTML = '';
+  SECTIONS.forEach(sec=>{
+    const d = bySection[sec];
+    const pct = Math.round((d.correct/d.total)*100);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="sec">'+sec+'</div><div class="score">'+d.correct+'/'+d.total+'</div><div class="bar"><span style="width:'+pct+'%"></span></div>';
+    summaryEl.appendChild(card);
+  });
+
+  const reviewEl = document.getElementById('reviewList');
+  reviewEl.innerHTML = '';
+  QUESTIONS.forEach(q=>{
+    const userAns = answers[q.id-1];
+    const isCorrect = userAns===q.correct;
+    const isBlank = userAns===null;
+    const item = document.createElement('div');
+    item.className = 'review-item';
+    const pillClass = isBlank ? 'blank' : (isCorrect ? 'correct' : 'wrong');
+    const pillText = isBlank ? 'Tidak dijawab' : (isCorrect ? 'Benar' : 'Salah');
+    item.innerHTML =
+      '<div class="rmeta"><span class="pill '+pillClass+'">'+pillText+'</span><span style="color:var(--ink-soft)">Soal '+q.id+' &middot; '+q.section+'</span></div>'+
+      '<div class="rq">'+q.text+'</div>'+
+      '<div class="rexp"><strong>Jawaban tepat: '+LETTERS[q.correct]+'. '+q.options[q.correct]+'</strong><br>'+q.explain+'</div>';
+    reviewEl.appendChild(item);
+  });
+
+  updateMapStates();
+}
+
+updateClock();
+</script>
+</body>
+</html>
